@@ -1,0 +1,5 @@
+model,validation_protocol,phase,unit,n_tests,RMSE,MAE,WAPE_pct,MAPE_pct,R2
+synth_stacked_v2,5-Fold Well-Stratified OOF CV (strictly out-of-sample),oil,STB/d,85,36.21,28.82,2.0,2.53,0.9989
+synth_stacked_v2,5-Fold Well-Stratified OOF CV (strictly out-of-sample),water,STB/d,85,31.1,23.79,3.27,3.96,0.9966
+synth_stacked_v2,5-Fold Well-Stratified OOF CV (strictly out-of-sample),gas,Mscf/d,85,21.19,17.21,4.66,6.68,0.9949
+synth_stacked_v2,5-Fold Well-Stratified OOF CV (strictly out-of-sample),liquid,STB/d,85,50.42,36.37,1.67,1.91,0.999

@@ -1,0 +1,7 @@
+event_id,well_name,duration_hr,regime,Stable Horner (L3) k (mD),Stable Horner (L3) S,Stehfest Analytical k (mD),Stehfest Analytical S,von Schroeter Deconv k (mD),von Schroeter Deconv S,Ilk B-Spline Deconv k (mD),Ilk B-Spline Deconv S,Agarwal Equiv Time k (mD),Agarwal Equiv Time S,Blasingame dP_id k (mD),Blasingame dP_id S,Odeh-Jones MultiRate k (mD),Odeh-Jones MultiRate S,Tiab Direct Synth k (mD),Tiab Direct Synth S,MDH + Muskat k (mD),MDH + Muskat S
+GL-01_20250415_0800,GL-01,72.0,Boundary-Masked / Short IARF Transition,104.44,5.816,104.29,5.799,,,,,103.96,5.761,114.81,7.04,,,100.76,5.395,105.29,5.915
+GL-02_20250308_1423,GL-02,5.65,Boundary-Masked / Short IARF Transition,55.65,-0.585,59.41,-0.334,,,,,55.51,-0.599,56.13,-0.542,,,55.74,-0.577,55.79,-0.574
+GL-04_20250603_0800,GL-04,48.0,Boundary-Masked / Short IARF Transition,55.18,-1.277,57.6,-0.986,,,,,55.2,-1.277,53.46,-1.452,,,55.23,-1.273,55.38,-1.259
+GL-06_20250722_0311,GL-06,8.0,Boundary-Masked / Short IARF Transition,297.82,1.983,309.59,2.099,,,,,297.93,1.985,284.51,1.625,,,294.89,1.901,297.96,1.985
+GL-08_20250819_0900,GL-08,72.0,Clean Infinite-Acting Radial Flow,42.85,-1.643,43.03,-1.727,,,,,42.75,-1.655,42.93,-1.633,,,42.95,-1.63,43.0,-1.626
+GL-10_20250527_2104,GL-10,9.0,Boundary-Masked / Short IARF Transition,176.2,2.016,182.4,2.09,,,,,174.89,1.958,188.55,2.579,,,181.58,2.259,177.19,2.061

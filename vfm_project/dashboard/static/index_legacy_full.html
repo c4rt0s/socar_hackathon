@@ -1,0 +1,2301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VFM + PTA Workbench</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --surface: #ffffff;
+      --surface-alt: #f8fafc;
+      --border: #dfe4ec;
+      --border-strong: #c8d1de;
+      --text: #1b2430;
+      --muted: #5c6878;
+      --accent: #1d5fd6;
+      --accent-soft: #eaf1ff;
+      --green: #16794c;
+      --green-bg: #e7f6ee;
+      --amber: #a85c00;
+      --amber-bg: #fff3dc;
+      --red: #b92424;
+      --red-bg: #fdecec;
+      --grey-bg: #edf1f6;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+      --radius: 8px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: 12px;
+      color: var(--text);
+    }
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-weight: 500;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    button:hover:not(:disabled) { background: var(--surface-alt); border-color: #aeb9c9; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    button.primary:hover:not(:disabled) { background: #1750ba; }
+    button.danger { color: var(--red); border-color: #e4b4b4; }
+    button.danger:hover:not(:disabled) { background: var(--red-bg); }
+    input[type="text"], input[type="number"], input[type="date"], select {
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      padding: 4px 8px;
+      background: var(--surface);
+      min-height: 28px;
+    }
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      min-width: 0;
+    }
+    .topbar-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+      white-space: nowrap;
+    }
+    .config-path {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--mono);
+      max-width: 340px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .switch-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+    .switch-label input { width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--grey-bg);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .badge.amber { background: var(--amber-bg); color: var(--amber); }
+    .badge.green { background: var(--green-bg); color: var(--green); }
+    .badge.red { background: var(--red-bg); color: var(--red); }
+    .badge.blue { background: var(--accent-soft); color: var(--accent); }
+    .workspace {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+    .sidebar {
+      width: 280px;
+      flex: 0 0 280px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+    .sidebar-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin: 0 0 6px 0;
+    }
+    .wells-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .wells-table th {
+      text-align: left;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      padding: 4px 5px;
+      border-bottom: 1px solid var(--border);
+    }
+    .wells-table td {
+      padding: 6px 5px;
+      border-bottom: 1px solid #eef2f6;
+      vertical-align: middle;
+    }
+    .wells-table tbody tr {
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .wells-table tbody tr:hover { background: var(--surface-alt); }
+    .wells-table tbody tr.active { background: var(--accent-soft); }
+    .well-name-cell {
+      font-weight: 600;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .coupled-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--amber);
+      display: inline-block;
+      flex: 0 0 auto;
+    }
+    .pta-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+    }
+    .chip {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1.3;
+      background: var(--grey-bg);
+      color: var(--muted);
+    }
+    .chip.green { background: var(--green-bg); color: var(--green); }
+    .chip.orange { background: var(--amber-bg); color: var(--amber); }
+    .chip.red { background: var(--red-bg); color: var(--red); }
+    .note-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .note-item {
+      padding: 6px 8px;
+      border-radius: 6px;
+      border-left: 3px solid var(--border-strong);
+      background: var(--surface-alt);
+      font-size: 11.5px;
+      word-break: break-word;
+    }
+    .note-item.INFO { border-left-color: var(--accent); background: #f3f7ff; }
+    .note-item.WARN, .note-item.WARNING { border-left-color: var(--amber); background: var(--amber-bg); }
+    .note-item.BLOCK, .note-item.ERROR { border-left-color: var(--red); background: var(--red-bg); }
+    .note-meta { font-weight: 700; font-size: 10.5px; margin-right: 4px; }
+    .main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .tab-bar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 16px 0 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .tab-btn {
+      border: 1px solid transparent;
+      border-bottom: none;
+      background: transparent;
+      padding: 7px 14px;
+      border-radius: 6px 6px 0 0;
+      font-weight: 600;
+      color: var(--muted);
+      position: relative;
+      bottom: -1px;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--surface-alt); }
+    .tab-btn.active {
+      color: var(--accent);
+      background: var(--bg);
+      border-color: var(--border);
+      border-bottom-color: var(--bg);
+    }
+    .tab-panels {
+      flex: 1;
+      padding: 14px 16px;
+      min-width: 0;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      margin-bottom: 12px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .card-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      margin: 0;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 1120px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+    .chart-box {
+      position: relative;
+      height: 260px;
+      width: 100%;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-group {
+      display: inline-flex;
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .btn-group button {
+      border: none;
+      border-radius: 0;
+      border-right: 1px solid var(--border-strong);
+      padding: 4px 10px;
+    }
+    .btn-group button:last-child { border-right: none; }
+    .btn-group button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      width: 100%;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    table.data-table th, table.data-table td {
+      padding: 5px 7px;
+      border-bottom: 1px solid #e9eef4;
+      text-align: left;
+      white-space: nowrap;
+    }
+    table.data-table th {
+      background: var(--surface-alt);
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 11px;
+      border-bottom: 1px solid var(--border);
+    }
+    table.data-table th.group-hdr {
+      text-align: center;
+      border-left: 1px solid var(--border);
+      background: #f1f4f9;
+      color: var(--text);
+    }
+    table.data-table td.num, table.data-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.data-table tbody tr.clickable { cursor: pointer; }
+    table.data-table tbody tr.clickable:hover { background: var(--surface-alt); }
+    table.data-table tbody tr.selected { background: var(--accent-soft); }
+    td.diff-warn {
+      background: var(--amber-bg);
+      color: var(--amber);
+      font-weight: 600;
+    }
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 8px 12px;
+    }
+    .kv-item {
+      padding: 6px 8px;
+      background: var(--surface-alt);
+      border: 1px solid #edf1f6;
+      border-radius: 6px;
+    }
+    .kv-label { font-size: 11px; color: var(--muted); }
+    .kv-val { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .form-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .form-field label { font-weight: 600; }
+    .check-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .small-muted { font-size: 11.5px; color: var(--muted); }
+    .startup-banner {
+      margin: 12px 16px 0 16px;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .startup-banner.error {
+      border-color: #e4b4b4;
+      background: var(--red-bg);
+      color: var(--red);
+    }
+    .busy-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .busy-overlay.show { display: flex; }
+    .busy-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 22px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast-wrap {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10000;
+      max-width: 380px;
+    }
+    .toast {
+      padding: 9px 13px;
+      border-radius: 7px;
+      font-size: 12.5px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.14);
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .toast.info { border-left: 4px solid var(--accent); }
+    .toast.success { border-left: 4px solid var(--green); background: var(--green-bg); color: var(--green); }
+    .toast.warn { border-left: 4px solid var(--amber); background: var(--amber-bg); color: var(--amber); }
+    .toast.error { border-left: 4px solid var(--red); background: var(--red-bg); color: var(--red); }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 class="topbar-title">VFM + PTA Workbench</h1>
+      <span id="hdr-config" class="config-path" title="">Loading...</span>
+    </div>
+    <div class="topbar-right">
+      <label class="switch-label" title="Enable or disable PTA to VFM coupling">
+        <input type="checkbox" id="hdr-coupling-switch" disabled>
+        <span>PTA &rarr; VFM coupling</span>
+      </label>
+      <span id="hdr-coupling-badge" class="badge">BASELINE (coupling off)</span>
+      <span id="hdr-model-badge" class="badge blue">Active model: &mdash;</span>
+      <button id="hdr-dl-vfm-btn" type="button" disabled title="Download Phase 1 VFM deliverable (.xlsx)">VFM Excel</button>
+      <button id="hdr-dl-pta-btn" type="button" disabled title="Download Phase 2 PTA deliverable (.xlsx)">PTA Excel</button>
+      <button id="hdr-export-btn" type="button" disabled>Export scenario</button>
+      <button id="hdr-reset-btn" type="button" class="danger" disabled>Reset judgement</button>
+    </div>
+  </header>
+
+  <div id="startup-banner" class="startup-banner">
+    <span id="startup-status-text">Connecting to workbench server...</span>
+  </div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div>
+        <h2 class="sidebar-section-title">Wells</h2>
+        <table class="wells-table">
+          <thead>
+            <tr>
+              <th>Well</th>
+              <th style="text-align:right">Tests</th>
+              <th>PTA</th>
+              <th style="text-align:right">&Delta;Oil</th>
+            </tr>
+          </thead>
+          <tbody id="sidebar-wells-body"></tbody>
+        </table>
+      </div>
+      <div>
+        <h2 class="sidebar-section-title">Overview notes</h2>
+        <div id="sidebar-notes" class="note-list"></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <nav id="tab-bar" class="tab-bar"></nav>
+      <div id="tab-panels" class="tab-panels"></div>
+    </main>
+  </div>
+</div>
+
+<div id="busy-overlay" class="busy-overlay">
+  <div class="busy-box">
+    <div class="spinner"></div>
+    <span id="busy-msg">Working...</span>
+  </div>
+</div>
+<div id="toast-wrap" class="toast-wrap"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  const listeners = {};
+  const tabs = [];
+  let activeTabId = null;
+  let modelsData = null;
+  let modelsPollTimer = null;
+  let busyCount = 0;
+
+  function emit(evt, data) {
+    const fns = listeners[evt];
+    if (!fns) return;
+    for (const fn of fns.slice()) {
+      try { fn(data); } catch (err) { console.error('WB event error', evt, err); }
+    }
+  }
+
+  function on(evt, fn) {
+    if (!listeners[evt]) listeners[evt] = [];
+    listeners[evt].push(fn);
+    return function () {
+      listeners[evt] = (listeners[evt] || []).filter(f => f !== fn);
+    };
+  }
+
+  async function api(path) {
+    const res = await fetch(path, { cache: 'no-store' });
+    const text = await res.text();
+    let json = null;
+    try { json = text ? JSON.parse(text) : null; } catch (_) {}
+    if (!res.ok) {
+      const msg = (json && json.error) ? json.error : (text || ('HTTP ' + res.status));
+      throw new Error(msg);
+    }
+    return json;
+  }
+
+  async function post(path, body, busyMsg) {
+    busy(true, busyMsg || 'Working...');
+    try {
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body === undefined ? {} : body)
+      });
+      const text = await res.text();
+      let json = null;
+      try { json = text ? JSON.parse(text) : null; } catch (_) {}
+      if (!res.ok) {
+        const msg = (json && json.error) ? json.error : (text || ('HTTP ' + res.status));
+        throw new Error(msg);
+      }
+      return json;
+    } catch (err) {
+      toast(err.message || String(err), 'error');
+      throw err;
+    } finally {
+      busy(false);
+    }
+  }
+
+  function fmt(v, digits = 1) {
+    if (v === null || v === undefined || v === '' || typeof v === 'boolean') return '\u2014';
+    const n = Number(v);
+    if (!Number.isFinite(n)) return '\u2014';
+    return n.toFixed(digits);
+  }
+
+  function esc(s) {
+    if (s === null || s === undefined) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function toast(msg, level = 'info') {
+    const wrap = document.getElementById('toast-wrap');
+    if (!wrap) return;
+    const el = document.createElement('div');
+    el.className = 'toast ' + (level || 'info');
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, level === 'error' ? 6000 : 4000);
+  }
+
+  function busy(onFlag, msg) {
+    const overlay = document.getElementById('busy-overlay');
+    const msgEl = document.getElementById('busy-msg');
+    if (onFlag) {
+      busyCount++;
+      if (msgEl) msgEl.textContent = msg || 'Working...';
+      if (overlay) overlay.classList.add('show');
+    } else {
+      busyCount = Math.max(0, busyCount - 1);
+      if (busyCount === 0 && overlay) overlay.classList.remove('show');
+    }
+  }
+
+  function phaseUnit(phase) {
+    return phase === 'gas' ? 'Mscf/d' : 'STB/d';
+  }
+
+  function chart(canvas, config) {
+    if (!canvas) return null;
+    const prev = Chart.getChart(canvas);
+    if (prev) prev.destroy();
+    const cfg = Object.assign({}, config);
+    cfg.options = Object.assign({
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false
+    }, config.options || {});
+    cfg.options.animation = false;
+    return new Chart(canvas.getContext('2d'), cfg);
+  }
+
+  const palette = [
+    '#1d5fd6', '#d95f02', '#16794c', '#9b2c9b', '#087f8c',
+    '#b92424', '#6b7280', '#a85c00', '#2b580c', '#4f46e5'
+  ];
+
+  const state = {
+    overview: null,
+    currentWell: null,
+    currentEvent: null,
+    activeModel: null
+  };
+
+  function registerTab(def) {
+    const idx = tabs.findIndex(t => t.def.id === def.id);
+    if (idx >= 0) tabs.splice(idx, 1);
+    tabs.push({ def, container: null, rendered: false });
+    tabs.sort((a, b) => (a.def.order || 99) - (b.def.order || 99));
+    renderTabBar();
+  }
+
+  function renderTabBar() {
+    const bar = document.getElementById('tab-bar');
+    if (!bar) return;
+    bar.innerHTML = tabs.map(t => (
+      '<button type="button" class="tab-btn' + (t.def.id === activeTabId ? ' active' : '') + '" data-tab="' + esc(t.def.id) + '">' +
+      esc(t.def.title) +
+      '</button>'
+    )).join('');
+    bar.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => activateTab(btn.getAttribute('data-tab')));
+    });
+  }
+
+  function activateTab(id) {
+    const entry = tabs.find(t => t.def.id === id);
+    if (!entry) return;
+    activeTabId = id;
+    const panelsEl = document.getElementById('tab-panels');
+    if (!entry.rendered && panelsEl) {
+      const div = document.createElement('div');
+      div.className = 'tab-panel';
+      div.setAttribute('data-tab-panel', id);
+      panelsEl.appendChild(div);
+      entry.container = div;
+      entry.rendered = true;
+      entry.def.render(div);
+    }
+    for (const t of tabs) {
+      if (t.container) {
+        t.container.classList.toggle('active', t.def.id === id);
+      }
+    }
+    renderTabBar();
+    if (entry.def.onShow) entry.def.onShow();
+    emit('tab', id);
+  }
+
+  window.WB = {
+    api,
+    post,
+    fmt,
+    esc,
+    toast,
+    busy,
+    state,
+    on,
+    emit,
+    registerTab,
+    palette,
+    phaseUnit,
+    chart
+  };
+
+  // --- Helper utilities for shell and core tabs ---
+  function statusChipClass(st) {
+    if (st === 'RADIAL') return 'green';
+    if (st === 'NO_RADIAL' || st === 'RADIAL_FORCED') return 'orange';
+    if (st === 'FAILED') return 'red';
+    return '';
+  }
+
+  function fmtSignedPct(v) {
+    if (v === null || v === undefined || v === 0 || !Number.isFinite(Number(v))) return '\u2014';
+    const n = Number(v);
+    return (n > 0 ? '+' : '') + n.toFixed(2) + '%';
+  }
+
+  function renderNotesHtml(notes) {
+    if (!notes || !notes.length) return '<div class="small-muted">No notes.</div>';
+    return notes.map(n => {
+      const lvl = (n.level || n.severity || 'INFO').toUpperCase();
+      const scope = [n.well_name, n.event_id].filter(Boolean).join(' / ');
+      return '<div class="note-item ' + esc(lvl) + '">' +
+        '<span class="note-meta">[' + esc(lvl) + (scope ? ' ' + esc(scope) : '') + ']</span>' +
+        esc(n.message || '') +
+      '</div>';
+    }).join('');
+  }
+
+  function renderHeader() {
+    const ov = state.overview;
+    const cfgEl = document.getElementById('hdr-config');
+    const sw = document.getElementById('hdr-coupling-switch');
+    const badge = document.getElementById('hdr-coupling-badge');
+    const modelBadge = document.getElementById('hdr-model-badge');
+    const expBtn = document.getElementById('hdr-export-btn');
+    const rstBtn = document.getElementById('hdr-reset-btn');
+    const dlVfmBtn = document.getElementById('hdr-dl-vfm-btn');
+    const dlPtaBtn = document.getElementById('hdr-dl-pta-btn');
+
+    if (ov) {
+      cfgEl.textContent = ov.config || '';
+      cfgEl.title = ov.config || '';
+      const enabled = !!(ov.settings && ov.settings.enabled);
+      sw.checked = enabled;
+      sw.disabled = false;
+      expBtn.disabled = false;
+      rstBtn.disabled = false;
+      if (dlVfmBtn) dlVfmBtn.disabled = false;
+      if (dlPtaBtn) dlPtaBtn.disabled = false;
+      if (enabled) {
+        badge.className = 'badge amber';
+        badge.textContent = 'COUPLED';
+      } else {
+        badge.className = 'badge';
+        badge.textContent = 'BASELINE (coupling off)';
+      }
+    }
+    modelBadge.textContent = 'Active model: ' + (state.activeModel || '\u2014');
+  }
+
+  function renderSidebar() {
+    const ov = state.overview;
+    const tbody = document.getElementById('sidebar-wells-body');
+    const notesEl = document.getElementById('sidebar-notes');
+    if (!ov) return;
+
+    tbody.innerHTML = (ov.wells || []).map(w => {
+      const active = w.well_name === state.currentWell ? ' class="active"' : '';
+      const hybByEv = {};
+      (ov.events || []).forEach(e => { hybByEv[e.event_id] = e; });
+      const chips = (w.events || []).map(ev => {
+        const fullEv = hybByEv[ev.event_id] || ev;
+        const hRating = fullEv.hybrid_confidence_rating;
+        const hScore = fullEv.hybrid_confidence_score;
+        if (hRating) {
+          const hCls = hRating === 'HIGH' ? 'green' : (hRating === 'MEDIUM' ? 'blue' : 'orange');
+          const title = (ev.event_id || '') + ' · Hybrid IARF: ' + hRating + ' (' + fmt(hScore, 0) + '/100) · Legacy: ' + (ev.status || '');
+          return '<span class="chip ' + hCls + '" title="' + esc(title) + '">IARF ' + esc(fmt(hScore, 0)) + '</span>';
+        }
+        const cls = statusChipClass(ev.status);
+        const title = (ev.event_id || '') + ' (' + (ev.status || '') + ', ' + fmt(ev.duration_hr, 1) + ' hr)';
+        return '<span class="chip ' + cls + '" title="' + esc(title) + '">' + esc(ev.status || '?') + '</span>';
+      }).join('');
+      const dot = w.coupled ? '<span class="coupled-dot" title="Coupled"></span>' : '';
+      return '<tr' + active + ' data-well="' + esc(w.well_name) + '">' +
+        '<td><div class="well-name-cell">' + dot + '<span>' + esc(w.well_name) + '</span></div></td>' +
+        '<td style="text-align:right">' + esc(w.n_tests) + '</td>' +
+        '<td><div class="pta-chips">' + (chips || '<span class="small-muted">&mdash;</span>') + '</div></td>' +
+        '<td style="text-align:right;font-variant-numeric:tabular-nums">' + esc(fmtSignedPct(w.cum_oil_change_pct)) + '</td>' +
+      '</tr>';
+    }).join('');
+
+    tbody.querySelectorAll('tr[data-well]').forEach(tr => {
+      tr.addEventListener('click', () => {
+        const name = tr.getAttribute('data-well');
+        if (name && name !== state.currentWell) {
+          emit('well', name);
+        }
+      });
+    });
+
+    notesEl.innerHTML = renderNotesHtml(ov.notes || []);
+  }
+
+  function checkModelsPolling(mData) {
+    modelsData = mData;
+    if (mData && mData.active) {
+      state.activeModel = mData.active;
+      renderHeader();
+    }
+    const anyRunning = mData && Array.isArray(mData.models) && mData.models.some(m => String(m.status || '').startsWith('running'));
+    if (anyRunning && !modelsPollTimer) {
+      modelsPollTimer = setInterval(async () => {
+        try {
+          const fresh = await api('/api/models');
+          modelsData = fresh;
+          state.activeModel = fresh.active;
+          renderHeader();
+          emit('models', fresh);
+          const stillRunning = Array.isArray(fresh.models) && fresh.models.some(m => String(m.status || '').startsWith('running'));
+          if (!stillRunning) {
+            clearInterval(modelsPollTimer);
+            modelsPollTimer = null;
+          }
+        } catch (err) {
+          console.error('Model poll error', err);
+        }
+      }, 3000);
+    } else if (!anyRunning && modelsPollTimer) {
+      clearInterval(modelsPollTimer);
+      modelsPollTimer = null;
+    }
+  }
+
+  on('well', wellName => {
+    state.currentWell = wellName;
+    renderSidebar();
+    for (const t of tabs) {
+      if (t.rendered && typeof t.def.onWellChange === 'function') {
+        t.def.onWellChange(wellName);
+      }
+    }
+  });
+
+  on('overview', ov => {
+    state.overview = ov;
+    renderHeader();
+    renderSidebar();
+  });
+
+  on('models', m => {
+    checkModelsPolling(m);
+  });
+
+  async function refreshOverview() {
+    const ov = await api('/api/overview');
+    emit('overview', ov);
+    return ov;
+  }
+
+  // =========================================================================
+  // TAB 1: Allocation
+  // =========================================================================
+  (function registerAllocationTab() {
+    let root = null;
+    let phase = 'oil';
+    let wellData = null;
+    let modelsWellData = null;
+    let localPropChanges = [];
+    let loadingSeq = 0;
+
+    function buildSkeleton(el) {
+      el.innerHTML =
+        '<div class="card">' +
+          '<div class="toolbar" style="justify-content:space-between">' +
+            '<div class="toolbar">' +
+              '<label style="font-weight:600">Allocation model:</label>' +
+              '<select id="t1-model-sel"></select>' +
+              '<span id="t1-model-status" class="badge">&mdash;</span>' +
+              '<button type="button" id="t1-dl-vfm-xlsx" title="Download Phase 1 VFM deliverable (Excel)">Download .xlsx</button>' +
+              '<button type="button" id="t1-dl-vfm-csv" title="Download Phase 1 VFM deliverable (CSV)">Download .csv</button>' +
+            '</div>' +
+            '<div class="toolbar">' +
+              '<span style="font-weight:600">Phase:</span>' +
+              '<div class="btn-group" id="t1-phase-btns">' +
+                '<button type="button" data-phase="oil" class="active">Oil</button>' +
+                '<button type="button" data-phase="water">Water</button>' +
+                '<button type="button" data-phase="liquid">Liquid</button>' +
+                '<button type="button" data-phase="gas">Gas</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="card-header"><h3 class="card-title" id="t1-rates-title">Allocated rates</h3></div>' +
+          '<div class="chart-box"><canvas id="t1-rates-chart"></canvas></div>' +
+        '</div>' +
+        '<div class="grid-2">' +
+          '<div class="card">' +
+            '<div class="card-header">' +
+              '<h3 class="card-title">Physics estimators</h3>' +
+              '<div class="toolbar">' +
+                '<label class="check-inline"><input type="checkbox" id="t1-est-ipr"> IPR</label>' +
+                '<label class="check-inline"><input type="checkbox" id="t1-est-choke"> Choke</label>' +
+                '<label class="check-inline"><input type="checkbox" id="t1-est-vlp"> VLP</label>' +
+              '</div>' +
+            '</div>' +
+            '<div class="chart-box"><canvas id="t1-est-chart"></canvas></div>' +
+          '</div>' +
+          '<div class="card">' +
+            '<div class="card-header"><h3 class="card-title">Reservoir pressure &amp; well condition</h3></div>' +
+            '<div class="chart-box"><canvas id="t1-pr-chart"></canvas></div>' +
+            '<div class="table-wrap" style="margin-top:10px">' +
+              '<table class="data-table">' +
+                '<thead><tr><th>IPR</th><th class="num">J (STB/d/psi)</th><th class="num">Pr0 datum (psia)</th><th class="num">Decline (psi/d)</th><th class="num">LOTO MAE</th><th>Pr prior source</th></tr></thead>' +
+                '<tbody id="t1-ipr-body"></tbody>' +
+              '</table>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="card-header">' +
+            '<h3 class="card-title">Well-condition changes</h3>' +
+            '<button type="button" id="t1-pc-save" class="primary">Save property changes</button>' +
+          '</div>' +
+          '<div class="table-wrap">' +
+            '<table class="data-table">' +
+              '<thead><tr><th>Enabled</th><th>Date</th><th class="num">Skin</th><th class="num">kh (mD&middot;ft)</th><th>Note</th><th></th></tr></thead>' +
+              '<tbody id="t1-pc-body"></tbody>' +
+            '</table>' +
+          '</div>' +
+          '<div class="form-row">' +
+            '<div class="form-field"><label>Date</label><input type="date" id="t1-pc-date"></div>' +
+            '<div class="form-field"><label>Skin</label><input type="number" step="0.01" id="t1-pc-skin" placeholder="optional" style="width:90px"></div>' +
+            '<div class="form-field"><label>kh (mD&middot;ft)</label><input type="number" step="1" id="t1-pc-kh" placeholder="optional" style="width:100px"></div>' +
+            '<div class="form-field"><label>Note</label><input type="text" id="t1-pc-note" placeholder="workover / stimulation" style="width:200px"></div>' +
+            '<div class="form-field"><label>&nbsp;</label><button type="button" id="t1-pc-add">Add row</button></div>' +
+          '</div>' +
+          '<div style="margin-top:12px" class="grid-2">' +
+            '<div><div class="sidebar-section-title">Condition timeline</div><div id="t1-timeline" class="note-list"></div></div>' +
+            '<div><div class="sidebar-section-title">Well notes</div><div id="t1-notes" class="note-list"></div></div>' +
+          '</div>' +
+        '</div>';
+
+      root.querySelectorAll('#t1-phase-btns button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          phase = btn.getAttribute('data-phase');
+          root.querySelectorAll('#t1-phase-btns button').forEach(b => b.classList.toggle('active', b === btn));
+          renderRatesChart();
+        });
+      });
+
+      root.querySelector('#t1-model-sel').addEventListener('change', async e => {
+        const name = e.target.value;
+        if (!name) return;
+        try {
+          const resp = await post('/api/models/active', { name }, 'Activating model ' + name + '...');
+          state.activeModel = name;
+          if (resp && resp.models) emit('models', resp);
+          else {
+            const m = await api('/api/models');
+            emit('models', m);
+          }
+          await waitForModelReady(name);
+          await loadWellData();
+        } catch (_) {
+          renderModelPicker();
+        }
+      });
+
+      ['ipr', 'choke', 'vlp'].forEach(key => {
+        root.querySelector('#t1-est-' + key).addEventListener('change', saveEstimators);
+      });
+
+      root.querySelector('#t1-pc-add').addEventListener('click', () => {
+        const date = root.querySelector('#t1-pc-date').value.trim();
+        const skinRaw = root.querySelector('#t1-pc-skin').value.trim();
+        const khRaw = root.querySelector('#t1-pc-kh').value.trim();
+        const note = root.querySelector('#t1-pc-note').value.trim();
+        if (!date) {
+          toast('Enter a date for the property change.', 'warn');
+          return;
+        }
+        localPropChanges.push({
+          well_name: state.currentWell,
+          date,
+          skin: skinRaw === '' ? null : Number(skinRaw),
+          kh_md_ft: khRaw === '' ? null : Number(khRaw),
+          note,
+          enabled: true
+        });
+        root.querySelector('#t1-pc-date').value = '';
+        root.querySelector('#t1-pc-skin').value = '';
+        root.querySelector('#t1-pc-kh').value = '';
+        root.querySelector('#t1-pc-note').value = '';
+        renderPropertyChanges();
+      });
+
+      root.querySelector('#t1-pc-save').addEventListener('click', savePropertyChanges);
+      root.querySelector('#t1-dl-vfm-xlsx').addEventListener('click', () => {
+        const m = encodeURIComponent(state.activeModel || 'physics_wls');
+        window.location.href = '/api/export/vfm?model=' + m + '&rate_type=alloc&format=xlsx';
+      });
+      root.querySelector('#t1-dl-vfm-csv').addEventListener('click', () => {
+        const m = encodeURIComponent(state.activeModel || 'physics_wls');
+        window.location.href = '/api/export/vfm?model=' + m + '&rate_type=alloc&format=csv';
+      });
+    }
+
+    async function waitForModelReady(name) {
+      for (let i = 0; i < 120; i++) {
+        const m = await api('/api/models');
+        emit('models', m);
+        const found = (m.models || []).find(x => x.name === name);
+        const st = found ? String(found.status || '') : '';
+        if (st.startsWith('ready') || st.startsWith('error') || !found) {
+          if (st.startsWith('error')) toast('Model ' + name + ': ' + st, 'error');
+          return;
+        }
+        await new Promise(r => setTimeout(r, 3000));
+      }
+    }
+
+    async function saveEstimators() {
+      const w = state.currentWell;
+      if (!w || !root) return;
+      const est = {
+        ipr: root.querySelector('#t1-est-ipr').checked,
+        choke: root.querySelector('#t1-est-choke').checked,
+        vlp: root.querySelector('#t1-est-vlp').checked
+      };
+      await post('/api/settings', { estimators: { [w]: est } }, 'Updating estimators...');
+      await refreshOverview();
+      await loadWellData();
+      toast('Estimators updated for ' + w, 'success');
+    }
+
+    async function savePropertyChanges() {
+      const w = state.currentWell;
+      if (!w) return;
+      const ov = state.overview;
+      const others = ((ov && ov.settings && ov.settings.property_changes) || [])
+        .filter(r => (r.well_name || r.well) !== w);
+      const mine = localPropChanges.map(r => Object.assign({}, r, { well_name: w }));
+      await post('/api/settings', { property_changes: others.concat(mine) }, 'Saving property changes...');
+      await refreshOverview();
+      await loadWellData();
+      toast('Property changes saved for ' + w, 'success');
+    }
+
+    function renderModelPicker() {
+      if (!root) return;
+      const sel = root.querySelector('#t1-model-sel');
+      const stEl = root.querySelector('#t1-model-status');
+      const list = (modelsData && modelsData.models) || [];
+      const active = state.activeModel || (modelsData && modelsData.active) || 'physics_wls';
+      sel.innerHTML = list.map(m => {
+        const label = m.name + (m.causal === false ? ' (hindcast)' : '');
+        const title = (m.family || '') + ': ' + (m.description || '');
+        return '<option value="' + esc(m.name) + '" title="' + esc(title) + '"' + (m.name === active ? ' selected' : '') + '>' +
+          esc(label) + '</option>';
+      }).join('');
+      const cur = list.find(m => m.name === active);
+      const st = cur ? String(cur.status || 'unknown') : '\u2014';
+      stEl.textContent = st;
+      stEl.className = 'badge ' + (st.startsWith('ready') ? 'green' : st.startsWith('error') ? 'red' : st.startsWith('running') ? 'amber' : '');
+    }
+
+    function renderRatesChart() {
+      if (!root || !wellData) return;
+      const canvas = root.querySelector('#t1-rates-chart');
+      const titleEl = root.querySelector('#t1-rates-title');
+      const unit = phaseUnit(phase);
+      titleEl.textContent = 'Allocated rates \u2014 ' + phase + ' (' + unit + ')';
+
+      const dates = (modelsWellData && modelsWellData.dates) || wellData.dates || [];
+      const dateSet = new Set(dates);
+      const mDict = (modelsWellData && modelsWellData.models) || {};
+      const active = state.activeModel || 'physics_wls';
+      const phys = mDict.physics_wls || null;
+      const act = mDict[active] || null;
+      const couplingOn = !!(state.overview && state.overview.settings && state.overview.settings.enabled);
+      const tests = (modelsWellData && modelsWellData.tests) || wellData.tests || [];
+
+      const datasets = [];
+      const physSeries = phys && phys[phase + '_alloc'] ? phys[phase + '_alloc'] : (wellData.baseline && wellData.baseline[phase]);
+      if (physSeries) {
+        datasets.push({
+          label: 'Physics baseline (alloc)',
+          data: physSeries,
+          borderColor: palette[6],
+          backgroundColor: palette[6],
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.1
+        });
+      }
+      if (act && act[phase + '_alloc'] && active !== 'physics_wls') {
+        datasets.push({
+          label: active + ' (alloc)',
+          data: act[phase + '_alloc'],
+          borderColor: palette[0],
+          backgroundColor: palette[0],
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.1
+        });
+      }
+      if (act && act[phase + '_vfm']) {
+        datasets.push({
+          label: active + ' (unanchored VFM)',
+          data: act[phase + '_vfm'],
+          borderColor: palette[1],
+          backgroundColor: palette[1],
+          borderWidth: 1.8,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          tension: 0.1
+        });
+      }
+      if (couplingOn && wellData.coupled && wellData.coupled[phase]) {
+        datasets.push({
+          label: 'Coupled physics',
+          data: wellData.coupled[phase],
+          borderColor: palette[2],
+          backgroundColor: palette[2],
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.1
+        });
+      }
+      const testPts = tests
+        .map(t => ({ x: (t.t_mid || '').slice(0, 10), y: t[phase] }))
+        .filter(pt => pt.y !== null && pt.y !== undefined && dateSet.has(pt.x));
+      if (testPts.length) {
+        datasets.push({
+          label: 'Well tests',
+          data: testPts,
+          showLine: false,
+          borderColor: '#111827',
+          backgroundColor: '#f59e0b',
+          borderWidth: 1.5,
+          pointRadius: 5,
+          pointHoverRadius: 7
+        });
+      }
+
+      chart(canvas, {
+        type: 'line',
+        data: { labels: dates, datasets },
+        options: {
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { position: 'top', labels: { boxWidth: 14, font: { size: 11 } } } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } },
+            y: { title: { display: true, text: unit } }
+          }
+        }
+      });
+    }
+
+    function renderEstimatorsChart() {
+      if (!root || !wellData) return;
+      const est = wellData.estimators || { ipr: true, choke: true, vlp: true };
+      root.querySelector('#t1-est-ipr').checked = est.ipr !== false;
+      root.querySelector('#t1-est-choke').checked = est.choke !== false;
+      root.querySelector('#t1-est-vlp').checked = est.vlp !== false;
+
+      const dates = wellData.dates || [];
+      const c = wellData.coupled || {};
+      const b = wellData.baseline || {};
+      const datasets = [
+        { label: 'q_ipr (coupled)', data: c.q_ipr || [], borderColor: palette[0], borderWidth: 1.8, pointRadius: 0 },
+        { label: 'q_choke', data: c.q_choke || [], borderColor: palette[2], borderWidth: 1.8, pointRadius: 0 },
+        { label: 'q_vlp', data: c.q_vlp || [], borderColor: palette[3], borderWidth: 1.8, pointRadius: 0 },
+        { label: 'liquid_vfm', data: c.liquid_vfm || [], borderColor: palette[1], borderWidth: 2, pointRadius: 0 },
+        { label: 'q_ipr (baseline)', data: b.q_ipr || [], borderColor: palette[6], borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0 }
+      ];
+
+      chart(root.querySelector('#t1-est-chart'), {
+        type: 'line',
+        data: { labels: dates, datasets },
+        options: {
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 8, font: { size: 10 } } },
+            y: { title: { display: true, text: 'STB/d (liquid)' } }
+          }
+        }
+      });
+    }
+
+    function renderPressureAndIPR() {
+      if (!root || !wellData) return;
+      const dates = wellData.dates || [];
+      const dateSet = new Set(dates);
+      const b = wellData.baseline || {};
+      const c = wellData.coupled || {};
+      const ipr = wellData.ipr || {};
+
+      const ancBase = (ipr.anchors_baseline || [])
+        .map(a => ({ x: (a.timestamp || '').slice(0, 10), y: a.pr_datum_psia }))
+        .filter(p => p.y != null && dateSet.has(p.x));
+      const ancCoup = (ipr.anchors_coupled || [])
+        .map(a => ({ x: (a.timestamp || '').slice(0, 10), y: a.pr_datum_psia }))
+        .filter(p => p.y != null && dateSet.has(p.x));
+
+      const datasets = [
+        { label: 'Pr baseline', data: b.pr_datum || [], yAxisID: 'y', borderColor: palette[6], borderWidth: 1.8, pointRadius: 0 },
+        { label: 'Pr coupled', data: c.pr_datum || [], yAxisID: 'y', borderColor: palette[0], borderWidth: 2, pointRadius: 0 },
+        { label: 'J multiplier', data: c.j_multiplier || [], yAxisID: 'y1', borderColor: palette[1], borderWidth: 1.8, stepped: true, pointRadius: 0 }
+      ];
+      if (ancBase.length) {
+        datasets.push({
+          label: 'Anchors baseline', data: ancBase, yAxisID: 'y', showLine: false,
+          borderColor: palette[6], backgroundColor: '#ffffff', borderWidth: 2, pointRadius: 5
+        });
+      }
+      if (ancCoup.length) {
+        datasets.push({
+          label: 'Anchors coupled', data: ancCoup, yAxisID: 'y', showLine: false,
+          borderColor: palette[2], backgroundColor: palette[2], pointRadius: 6
+        });
+      }
+
+      chart(root.querySelector('#t1-pr-chart'), {
+        type: 'line',
+        data: { labels: dates, datasets },
+        options: {
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 8, font: { size: 10 } } },
+            y: { position: 'left', title: { display: true, text: 'psia' } },
+            y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'J multiplier' } }
+          }
+        }
+      });
+
+      const rows = [
+        { name: 'Baseline', d: ipr.baseline || {} },
+        { name: 'Coupled', d: ipr.coupled || {} }
+      ];
+      root.querySelector('#t1-ipr-body').innerHTML = rows.map(r => (
+        '<tr>' +
+          '<td><strong>' + esc(r.name) + '</strong></td>' +
+          '<td class="num">' + esc(fmt(r.d.J, 3)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.d.Pr0_datum_psia, 1)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.d.decline_psi_per_day, 3)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.d.loto_mae_stbd, 0)) + '</td>' +
+          '<td>' + esc(r.d.pr_prior_source || '\u2014') + '</td>' +
+        '</tr>'
+      )).join('');
+    }
+
+    function renderPropertyChanges() {
+      if (!root) return;
+      const tbody = root.querySelector('#t1-pc-body');
+      if (!localPropChanges.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="small-muted">No well-condition changes recorded for this well.</td></tr>';
+      } else {
+        tbody.innerHTML = localPropChanges.map((r, i) => (
+          '<tr>' +
+            '<td><input type="checkbox" class="t1-pc-en" data-idx="' + i + '"' + (r.enabled !== false ? ' checked' : '') + '></td>' +
+            '<td>' + esc(r.date || '') + '</td>' +
+            '<td class="num">' + esc(fmt(r.skin, 2)) + '</td>' +
+            '<td class="num">' + esc(fmt(r.kh_md_ft, 0)) + '</td>' +
+            '<td>' + esc(r.note || '') + '</td>' +
+            '<td><button type="button" class="danger t1-pc-del" data-idx="' + i + '">Delete</button></td>' +
+          '</tr>'
+        )).join('');
+        tbody.querySelectorAll('.t1-pc-en').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const idx = Number(cb.getAttribute('data-idx'));
+            localPropChanges[idx].enabled = cb.checked;
+          });
+        });
+        tbody.querySelectorAll('.t1-pc-del').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = Number(btn.getAttribute('data-idx'));
+            localPropChanges.splice(idx, 1);
+            renderPropertyChanges();
+          });
+        });
+      }
+
+      const tl = (wellData && wellData.condition_timeline) || [];
+      root.querySelector('#t1-timeline').innerHTML = tl.length
+        ? tl.map(item => '<div class="note-item INFO">' + esc(typeof item === 'string' ? item : JSON.stringify(item)) + '</div>').join('')
+        : '<div class="small-muted">No condition timeline entries.</div>';
+      root.querySelector('#t1-notes').innerHTML = renderNotesHtml((wellData && wellData.notes) || []);
+    }
+
+    async function loadWellData() {
+      const w = state.currentWell;
+      if (!w || !root) return;
+      const seq = ++loadingSeq;
+      const active = state.activeModel || 'physics_wls';
+      const reqModels = Array.from(new Set(['physics_wls', active])).join(',');
+      try {
+        const [wd, mw] = await Promise.all([
+          api('/api/well?name=' + encodeURIComponent(w)),
+          api('/api/models/well?name=' + encodeURIComponent(w) + '&models=' + encodeURIComponent(reqModels))
+        ]);
+        if (seq !== loadingSeq) return;
+        wellData = wd;
+        modelsWellData = mw;
+        localPropChanges = (wd.property_changes || []).map(r => Object.assign({}, r));
+        renderModelPicker();
+        renderRatesChart();
+        renderEstimatorsChart();
+        renderPressureAndIPR();
+        renderPropertyChanges();
+      } catch (err) {
+        if (seq === loadingSeq) toast('Failed loading well data: ' + err.message, 'error');
+      }
+    }
+
+    on('models', () => {
+      renderModelPicker();
+    });
+
+    on('overview', () => {
+      if (root && root.classList.contains('active')) loadWellData();
+    });
+
+    registerTab({
+      id: 'allocation',
+      title: 'Allocation',
+      order: 1,
+      render(container) {
+        root = container;
+        buildSkeleton(container);
+      },
+      onShow() {
+        renderModelPicker();
+        loadWellData();
+      },
+      onWellChange() {
+        loadWellData();
+      }
+    });
+  })();
+
+  // =========================================================================
+  // TAB 2: PTA
+  // =========================================================================
+  (function registerPTATab() {
+    let root = null;
+    let ptaData = null;
+    let selectedEventId = null;
+
+    function getWellEvents() {
+      const ov = state.overview;
+      const w = state.currentWell;
+      if (!ov || !w) return [];
+      const fromOverview = (ov.events || []).filter(e => e.well_name === w);
+      if (fromOverview.length) return fromOverview;
+      const wellObj = (ov.wells || []).find(x => x.well_name === w);
+      return (wellObj && wellObj.events) || [];
+    }
+
+    function buildSkeleton(el) {
+      el.innerHTML =
+        '<div class="card">' +
+          '<div class="card-header">' +
+            '<h3 class="card-title">PTA build-up events for <span id="t2-well-name">&mdash;</span></h3>' +
+            '<div class="toolbar">' +
+              '<label style="font-weight:600">Rate basis:</label>' +
+              '<select id="t2-global-basis" title="Single-phase Q_oil (Hackathon spec) vs Q_total (qo*Bo + qw*Bw)">' +
+                '<option value="oil">Q_oil (Single-phase oil)</option>' +
+                '<option value="total_liquid">Q_total (qo&middot;Bo + qw&middot;Bw)</option>' +
+              '</select>' +
+              '<label style="font-weight:600">Export logic:</label>' +
+              '<select id="t2-pta-source" title="Choose PTA interpretation engine to export">' +
+                '<option value="hybrid_intersection">Hybrid Intersection ★ (Horner ∩ Bourdet)</option>' +
+                '<option value="hybrid_horner">Hybrid L1: Horner (Theil-Sen + PELT)</option>' +
+                '<option value="hybrid_bourdet">Hybrid L2: Bourdet (L=0.15 + PELT)</option>' +
+                '<option value="auto">Legacy Auto (Kernel / Horner)</option>' +
+              '</select>' +
+              '<button type="button" id="t2-dl-pta-xlsx" class="primary">Download PTA .xlsx</button>' +
+              '<button type="button" id="t2-dl-pta-csv">Download PTA .csv</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="table-wrap">' +
+            '<table class="data-table">' +
+              '<thead><tr><th>Event ID</th><th>Shut-in start</th><th class="num">Duration (hr)</th><th>Status / Hybrid IARF</th><th class="num">kh (mD&middot;ft)</th><th class="num">Skin</th></tr></thead>' +
+              '<tbody id="t2-ev-body"></tbody>' +
+            '</table>' +
+          '</div>' +
+        '</div>' +
+        '<div id="t2-detail-wrap" style="display:none">' +
+          '<div class="card" id="t2-hybrid-card" style="display:none; border-left:4px solid #0f9960;">' +
+            '<div class="card-header">' +
+              '<h3 class="card-title">Automated Hybrid IARF Detector &amp; Reliability Score Card</h3>' +
+              '<div class="toolbar">' +
+                '<span id="t2-hyb-rating" class="badge green">&mdash;</span>' +
+                '<span id="t2-hyb-score" class="badge blue">&mdash;</span>' +
+              '</div>' +
+            '</div>' +
+            '<div id="t2-hyb-body"></div>' +
+          '</div>' +
+          '<div class="card">' +
+            '<div class="card-header">' +
+              '<h3 class="card-title" id="t2-chart-title">Log-log diagnostic plot</h3>' +
+              '<div class="toolbar">' +
+                '<span id="t2-status-badge" class="badge">&mdash;</span>' +
+                '<button type="button" id="t2-edit-decision" class="primary">Edit decision</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="chart-box" style="height:280px"><canvas id="t2-loglog-chart"></canvas></div>' +
+          '</div>' +
+          '<div class="grid-2">' +
+            '<div class="card">' +
+              '<div class="card-header"><h3 class="card-title">Methods</h3><span id="t2-win-src" class="small-muted"></span></div>' +
+              '<div class="table-wrap">' +
+                '<table class="data-table">' +
+                  '<thead><tr><th>Method</th><th class="num">kh (mD&middot;ft)</th><th class="num">k (mD)</th><th class="num">Skin</th><th class="num">p* / Pr (psia)</th><th>Extra</th></tr></thead>' +
+                  '<tbody id="t2-methods-body"></tbody>' +
+                '</table>' +
+              '</div>' +
+              '<div id="t2-method-notes" class="small-muted" style="margin-top:8px"></div>' +
+            '</div>' +
+            '<div class="card">' +
+              '<div class="card-header"><h3 class="card-title">Productivity &amp; pressure</h3></div>' +
+              '<div id="t2-prod-grid" class="kv-grid"></div>' +
+              '<div id="t2-rate-info" class="small-muted" style="margin-top:8px"></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="grid-2">' +
+            '<div class="card">' +
+              '<div class="card-header"><h3 class="card-title">QC flags</h3></div>' +
+              '<div id="t2-qc-flags" class="note-list"></div>' +
+            '</div>' +
+            '<div class="card">' +
+              '<div class="card-header"><h3 class="card-title">Re-run analysis</h3></div>' +
+              '<div class="form-row">' +
+                '<div class="form-field"><label>Rate source</label>' +
+                  '<select id="t2-rr-rate"><option value="vfm_daily">vfm_daily</option><option value="well_tests">well_tests</option></select>' +
+                '</div>' +
+                '<div class="form-field"><label>Rate basis</label>' +
+                  '<select id="t2-rr-basis"><option value="oil">Q_oil (oil)</option><option value="total_liquid">Q_total (liquid)</option></select>' +
+                '</div>' +
+                '<div class="form-field"><label>Smoothing L10</label>' +
+                  '<input type="number" step="0.05" min="0" id="t2-rr-smooth" style="width:90px">' +
+                '</div>' +
+                '<div class="form-field"><label>Manual radial start (hr)</label>' +
+                  '<input type="number" step="0.1" id="t2-rr-rstart" placeholder="auto" style="width:95px">' +
+                '</div>' +
+                '<div class="form-field"><label>Manual radial end (hr)</label>' +
+                  '<input type="number" step="0.1" id="t2-rr-rend" placeholder="auto" style="width:95px">' +
+                '</div>' +
+              '</div>' +
+              '<div class="form-row">' +
+                '<label class="check-inline"><input type="checkbox" id="t2-rr-prepend"> Prepend cumulative history</label>' +
+                '<label class="check-inline"><input type="checkbox" id="t2-rr-force"> Force manual radial (engineer override, recorded as WARN)</label>' +
+              '</div>' +
+              '<div class="form-row">' +
+                '<button type="button" id="t2-rr-btn" class="primary">Re-run PTA</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div id="t2-empty-msg" class="card small-muted" style="display:none">No PTA events for this well.</div>';
+
+      root.querySelector('#t2-edit-decision').addEventListener('click', () => {
+        if (ptaData && ptaData.event_id) {
+          state.currentEvent = ptaData.event_id;
+        }
+        activateTab('link');
+      });
+
+      root.querySelector('#t2-rr-btn').addEventListener('click', rerunPTA);
+      root.querySelector('#t2-global-basis').addEventListener('change', async e => {
+        const basis = e.target.value;
+        try {
+          const ov = await post('/api/pta/rate_basis', { rate_basis: basis }, 'Recalculating all PTA events (' + basis + ')...');
+          emit('overview', ov);
+          if (selectedEventId) await loadEvent(selectedEventId);
+          toast('PTA rate basis switched to ' + basis + '.', 'success');
+        } catch (_) {
+          renderEventList();
+        }
+      });
+      root.querySelector('#t2-dl-pta-xlsx').addEventListener('click', () => {
+        const src = (root.querySelector('#t2-pta-source') && root.querySelector('#t2-pta-source').value) || 'hybrid_intersection';
+        window.location.href = '/api/export/pta?source=' + encodeURIComponent(src) + '&format=xlsx';
+      });
+      root.querySelector('#t2-dl-pta-csv').addEventListener('click', () => {
+        const src = (root.querySelector('#t2-pta-source') && root.querySelector('#t2-pta-source').value) || 'hybrid_intersection';
+        window.location.href = '/api/export/pta?source=' + encodeURIComponent(src) + '&format=csv';
+      });
+    }
+
+    function renderEventList() {
+      if (!root) return;
+      root.querySelector('#t2-well-name').textContent = state.currentWell || '\u2014';
+      const gb = root.querySelector('#t2-global-basis');
+      if (gb && state.overview && state.overview.pta_rate_basis) gb.value = state.overview.pta_rate_basis;
+      const events = getWellEvents();
+      const tbody = root.querySelector('#t2-ev-body');
+      if (!events.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="small-muted">No PTA events for selected well.</td></tr>';
+        root.querySelector('#t2-detail-wrap').style.display = 'none';
+        root.querySelector('#t2-empty-msg').style.display = 'block';
+        return;
+      }
+      root.querySelector('#t2-empty-msg').style.display = 'none';
+
+      if (!selectedEventId || !events.some(e => e.event_id === selectedEventId)) {
+        selectedEventId = (state.currentEvent && events.some(e => e.event_id === state.currentEvent))
+          ? state.currentEvent
+          : events[0].event_id;
+      }
+
+      tbody.innerHTML = events.map(ev => {
+        const cls = statusChipClass(ev.status);
+        const sel = ev.event_id === selectedEventId ? ' selected' : '';
+        const hybBadge = ev.hybrid_confidence_rating
+          ? ' <span class="chip ' + (ev.hybrid_confidence_rating === 'HIGH' ? 'green' : 'blue') + '">HYBRID ' + esc(ev.hybrid_confidence_rating) + ' (' + esc(fmt(ev.hybrid_confidence_score, 0)) + ')</span>'
+          : '';
+        return '<tr class="clickable' + sel + '" data-ev="' + esc(ev.event_id) + '">' +
+          '<td><strong>' + esc(ev.event_id) + '</strong></td>' +
+          '<td>' + esc((ev.shut_in_start || '').slice(0, 19).replace('T', ' ')) + '</td>' +
+          '<td class="num">' + esc(fmt(ev.duration_hr, 1)) + '</td>' +
+          '<td><span class="chip ' + cls + '">' + esc(ev.status || '?') + '</span>' + hybBadge + '</td>' +
+          '<td class="num">' + esc(fmt(ev.kh_md_ft, 0)) + '</td>' +
+          '<td class="num">' + esc(fmt(ev.skin, 2)) + '</td>' +
+        '</tr>';
+      }).join('');
+
+      tbody.querySelectorAll('tr[data-ev]').forEach(tr => {
+        tr.addEventListener('click', () => {
+          selectedEventId = tr.getAttribute('data-ev');
+          state.currentEvent = selectedEventId;
+          renderEventList();
+          loadEvent(selectedEventId);
+        });
+      });
+    }
+
+    async function loadEvent(eventId) {
+      if (!eventId || !root) return;
+      try {
+        const data = await api('/api/pta?event=' + encodeURIComponent(eventId));
+        if (eventId !== selectedEventId) return;
+        ptaData = data;
+        renderPTA(data);
+      } catch (err) {
+        toast('Failed loading PTA event: ' + err.message, 'error');
+      }
+    }
+
+    function renderPTA(d) {
+      if (!root || !d) return;
+      root.querySelector('#t2-detail-wrap').style.display = 'block';
+      root.querySelector('#t2-chart-title').textContent = 'Log-log diagnostic plot \u2014 ' + (d.event_id || '');
+      const stBadge = root.querySelector('#t2-status-badge');
+      stBadge.textContent = d.status || '\u2014';
+      const cls = statusChipClass(d.status);
+      stBadge.className = 'badge ' + (cls === 'orange' ? 'amber' : cls);
+
+      // Render Hybrid Automated IARF & Reliability Score Card
+      const hyb = d.hybrid_pta || null;
+      const hybCard = root.querySelector('#t2-hybrid-card');
+      if (hyb && hybCard) {
+        hybCard.style.display = 'block';
+        const rEl = root.querySelector('#t2-hyb-rating');
+        const sEl = root.querySelector('#t2-hyb-score');
+        rEl.textContent = (hyb.confidence_rating || '') + ' CONFIDENCE';
+        rEl.className = 'badge ' + (hyb.confidence_rating === 'HIGH' ? 'green' : (hyb.confidence_rating === 'MEDIUM' ? 'blue' : 'amber'));
+        sEl.textContent = 'Score: ' + fmt(hyb.confidence_score, 1) + ' / 100';
+        const chk = hyb.checks || {};
+        const pill = (lbl, val) => '<span class="chip ' + (val === 'PASS' ? 'green' : 'orange') + '" style="margin-right:6px;">' + esc(lbl) + ': ' + esc(val || '—') + '</span>';
+        const l1 = hyb.logic1_horner || {}, l2 = hyb.logic2_bourdet || {}, l3 = hyb.logic3_intersection || {};
+        root.querySelector('#t2-hyb-body').innerHTML =
+          '<div style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin-bottom:10px;">' +
+            '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px;">' +
+              '<div class="small-muted">Intersection IARF Window</div>' +
+              '<div style="font-size:14px; font-weight:700; font-family:var(--mono,monospace); color:#0f9960;">' + fmt(hyb.intersect_win_hr[0], 2) + ' – ' + fmt(hyb.intersect_win_hr[1], 2) + ' hr</div>' +
+              '<div class="small-muted">Span: ' + fmt(hyb.intersect_span_cyc, 2) + ' log cycles</div>' +
+            '</div>' +
+            '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px;">' +
+              '<div class="small-muted">Consensus k / Skin / ΔP_skin</div>' +
+              '<div style="font-size:14px; font-weight:700; font-family:var(--mono,monospace);">' + fmt(l3.k, 2) + ' mD · S=' + fmt(l3.skin, 2) + '</div>' +
+              '<div class="small-muted">m=' + fmt(l3.m, 2) + ' psi/cyc · ΔP=' + fmt(l3.dP_skin, 1) + ' psi</div>' +
+            '</div>' +
+            '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px;">' +
+              '<div class="small-muted">Derivative Plateau Stability</div>' +
+              '<div style="font-size:14px; font-weight:700; font-family:var(--mono,monospace);">Slope ' + fmt(hyb.log_log_slope, 3) + ' · CV ' + fmt(hyb.deriv_cv_pct, 1) + '%</div>' +
+              '<div class="small-muted">L=0.10..0.20 drift: ' + fmt(hyb.smooth_drift_pct, 2) + '%</div>' +
+            '</div>' +
+            '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px;">' +
+              '<div class="small-muted">Horner Linearity &amp; V2 Rate</div>' +
+              '<div style="font-size:14px; font-weight:700; font-family:var(--mono,monospace);">R² = ' + fmt(hyb.r2_horner, 4) + '</div>' +
+              '<div class="small-muted">Qo=' + fmt(hyb.qo_stbd, 1) + ' STB/d · Pwf=' + fmt(hyb.pwf_3h_med, 1) + ' psia</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px;">' +
+            '<div>' +
+              pill('Plateau', chk.plateau) + pill('Horner R²', chk.horner) + pill('Duration', chk.duration) +
+              pill('Smoothing', chk.smoothing) + pill('Intersection', chk.intersection) +
+            '</div>' +
+            '<div class="small-muted">L1 Horner: [' + fmt(hyb.horner_win_hr[0], 2) + ', ' + fmt(hyb.horner_win_hr[1], 2) + ' h] · L2 Bourdet: [' + fmt(hyb.bourdet_win_hr[0], 2) + ', ' + fmt(hyb.bourdet_win_hr[1], 2) + ' h]</div>' +
+          '</div>';
+      } else if (hybCard) {
+        hybCard.style.display = 'none';
+      }
+
+      // Log-log scatter chart
+      const ser = d.series || {};
+      const dt = ser.dt_hr || [];
+      const dp = ser.dp_psi || [];
+      const der = ser.derivative_psi || [];
+      const rad = d.radial_interval || {};
+      const rStart = rad.dt_start_hr;
+      const rEnd = rad.dt_end_hr;
+      const hStart = hyb && hyb.intersect_win_hr ? hyb.intersect_win_hr[0] : null;
+      const hEnd = hyb && hyb.intersect_win_hr ? hyb.intersect_win_hr[1] : null;
+
+      const dpPts = [];
+      const derPts = [];
+      const derRadPts = [];
+      const derHybPts = [];
+      for (let i = 0; i < dt.length; i++) {
+        const x = dt[i];
+        if (x === null || x === undefined || !(x > 0)) continue;
+        if (dp[i] !== null && dp[i] !== undefined && dp[i] > 0) {
+          dpPts.push({ x, y: dp[i] });
+        }
+        if (der[i] !== null && der[i] !== undefined && der[i] > 0) {
+          const inHyb = hStart != null && hEnd != null && x >= hStart && x <= hEnd;
+          const inRad = rStart != null && rEnd != null && x >= rStart && x <= rEnd;
+          if (inHyb) derHybPts.push({ x, y: der[i] });
+          if (inRad) derRadPts.push({ x, y: der[i] });
+          if (!inHyb && !inRad) derPts.push({ x, y: der[i] });
+        }
+      }
+
+      const datasets = [
+        {
+          label: '\u0394p (psi)',
+          data: dpPts,
+          borderColor: palette[0],
+          backgroundColor: palette[0],
+          pointRadius: 3
+        },
+        {
+          label: 'Derivative (psi)',
+          data: derPts,
+          borderColor: palette[1],
+          backgroundColor: palette[1],
+          pointRadius: 3
+        }
+      ];
+      if (derHybPts.length) {
+        datasets.push({
+          label: 'Hybrid Intersection IARF [' + fmt(hStart, 2) + '\u2013' + fmt(hEnd, 2) + ' hr]',
+          data: derHybPts,
+          borderColor: '#065f46',
+          backgroundColor: '#10b981',
+          borderWidth: 1.8,
+          pointRadius: 5.5
+        });
+      }
+      if (derRadPts.length) {
+        datasets.push({
+          label: 'Legacy Kernel Radial Window',
+          data: derRadPts,
+          borderColor: '#111827',
+          backgroundColor: palette[3],
+          borderWidth: 1.5,
+          pointRadius: 4.5
+        });
+      }
+
+      const mm = (d.methods && d.methods.model_match) || null;
+      if (mm && Array.isArray(mm.dt_model_hr) && mm.dt_model_hr.length) {
+        const mmDp = [];
+        const mmDer = [];
+        for (let i = 0; i < mm.dt_model_hr.length; i++) {
+          const x = mm.dt_model_hr[i];
+          if (!(x > 0)) continue;
+          if (mm.dp_model_psi && mm.dp_model_psi[i] > 0) mmDp.push({ x, y: mm.dp_model_psi[i] });
+          if (mm.deriv_model_psi && mm.deriv_model_psi[i] > 0) mmDer.push({ x, y: mm.deriv_model_psi[i] });
+        }
+        if (mmDp.length) {
+          datasets.push({
+            label: 'Model \u0394p',
+            data: mmDp,
+            showLine: true,
+            borderColor: palette[0],
+            borderWidth: 1.6,
+            pointRadius: 0
+          });
+        }
+        if (mmDer.length) {
+          datasets.push({
+            label: 'Model derivative',
+            data: mmDer,
+            showLine: true,
+            borderColor: palette[1],
+            borderDash: [5, 3],
+            borderWidth: 1.6,
+            pointRadius: 0
+          });
+        }
+      }
+
+      chart(root.querySelector('#t2-loglog-chart'), {
+        type: 'scatter',
+        data: { datasets },
+        options: {
+          plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+          scales: {
+            x: { type: 'logarithmic', title: { display: true, text: '\u0394t (hr)' } },
+            y: { type: 'logarithmic', title: { display: true, text: '\u0394p & Derivative (psi)' } }
+          }
+        }
+      });
+
+      // Methods table
+      const res = d.results || {};
+      const mth = d.methods || {};
+      const hor = mth.horner || {};
+      const mdh = mth.mdh || {};
+      const mod = mth.model_match || {};
+      const ipbu = d.internal_pbu || {};
+
+      root.querySelector('#t2-win-src').textContent = mth.window_source ? ('Window: ' + mth.window_source) : '';
+      const methodRows = [];
+      if (hyb) {
+        const l1 = hyb.logic1_horner || {}, l2 = hyb.logic2_bourdet || {}, l3 = hyb.logic3_intersection || {};
+        methodRows.push({
+          name: '★ Hybrid L3: Intersection Ensemble',
+          kh: fmt(l3.kh, 0), k: fmt(l3.k, 2), skin: fmt(l3.skin, 3), p: '\u2014',
+          extra: 'm=' + fmt(l3.m, 2) + ', ΔP_s=' + fmt(l3.dP_skin, 1) + ' psi, [' + fmt(l3.win_hr[0], 2) + '-' + fmt(l3.win_hr[1], 2) + ' h]'
+        });
+        methodRows.push({
+          name: 'Hybrid L1: Horner (Theil-Sen+PELT)',
+          kh: fmt(l1.kh, 0), k: fmt(l1.k, 2), skin: fmt(l1.skin, 3), p: '\u2014',
+          extra: 'm=' + fmt(l1.m, 2) + ', ΔP_s=' + fmt(l1.dP_skin, 1) + ' psi, [' + fmt(l1.win_hr[0], 2) + '-' + fmt(l1.win_hr[1], 2) + ' h]'
+        });
+        methodRows.push({
+          name: 'Hybrid L2: Bourdet (L=0.15+PELT)',
+          kh: fmt(l2.kh, 0), k: fmt(l2.k, 2), skin: fmt(l2.skin, 3), p: '\u2014',
+          extra: 'm=' + fmt(l2.m, 2) + ', ΔP_s=' + fmt(l2.dP_skin, 1) + ' psi, [' + fmt(l2.win_hr[0], 2) + '-' + fmt(l2.win_hr[1], 2) + ' h]'
+        });
+      }
+      methodRows.push(
+        {
+          name: 'Legacy Derivative (Kernel)',
+          kh: fmt(res.kh_md_ft, 0),
+          k: fmt(res.k_md, 1),
+          skin: fmt(res.apparent_skin, 2),
+          p: fmt(res.extrapolated_pressure_psi, 1),
+          extra: 'C=' + fmt(res.storage_bbl_per_psi, 4) + ' bbl/psi'
+        },
+        {
+          name: 'Legacy Horner',
+          kh: fmt(hor.kh, 0),
+          k: fmt(hor.k, 1),
+          skin: fmt(hor.skin, 2),
+          p: fmt(hor.p_star, 1),
+          extra: 'm=' + fmt(hor.m, 1) + ', R\u00b2=' + fmt(hor.r2, 4)
+        },
+        {
+          name: 'MDH',
+          kh: fmt(mdh.kh, 0),
+          k: fmt(mdh.k, 1),
+          skin: fmt(mdh.skin, 2),
+          p: '\u2014',
+          extra: 'valid=' + (mdh.valid === undefined || mdh.valid === null ? '\u2014' : String(mdh.valid))
+        },
+        {
+          name: 'Model match',
+          kh: fmt(mod.kh_md_ft, 0),
+          k: fmt(mod.k_md, 1),
+          skin: fmt(mod.skin, 2),
+          p: '\u2014',
+          extra: 'C=' + fmt(mod.c_bbl_psi, 4) + ', RMS=' + fmt(mod.rms_psi, 3) + ' psi, conv=' + (mod.converged === undefined || mod.converged === null ? '\u2014' : String(mod.converged))
+        },
+        {
+          name: 'Internal',
+          kh: fmt(ipbu.kh_md_ft, 0),
+          k: '\u2014',
+          skin: fmt(ipbu.skin, 2),
+          p: fmt(ipbu.pr_datum_psia, 1),
+          extra: 'flag=' + (ipbu.quality_flag || '\u2014')
+        }
+      );
+      root.querySelector('#t2-methods-body').innerHTML = methodRows.map(r => (
+        '<tr>' +
+          '<td><strong>' + esc(r.name) + '</strong></td>' +
+          '<td class="num">' + esc(r.kh) + '</td>' +
+          '<td class="num">' + esc(r.k) + '</td>' +
+          '<td class="num">' + esc(r.skin) + '</td>' +
+          '<td class="num">' + esc(r.p) + '</td>' +
+          '<td>' + esc(r.extra) + '</td>' +
+        '</tr>'
+      )).join('');
+
+      const prod = mth.productivity || {};
+      const allNotes = []
+        .concat(mth.notes || [])
+        .concat((hor.notes || []).map(x => 'Horner: ' + x))
+        .concat((mdh.notes || []).map(x => 'MDH: ' + x))
+        .concat((mod.notes || []).map(x => 'Model: ' + x))
+        .concat((prod.notes || []).map(x => 'Productivity: ' + x));
+      root.querySelector('#t2-method-notes').innerHTML = allNotes.length
+        ? allNotes.map(n => '<div>&bull; ' + esc(n) + '</div>').join('')
+        : 'No method notes.';
+
+      // Productivity & pressure
+      const derv = d.derived || {};
+      const kvs = [
+        ['PI actual (STB/d/psi)', fmt(prod.pi_actual_stbd_psi, 3)],
+        ['PI theoretical', fmt(prod.pi_theoretical_stbd_psi, 3)],
+        ['PI ideal', fmt(prod.pi_ideal_stbd_psi, 3)],
+        ['Flow efficiency', fmt(prod.flow_efficiency, 3)],
+        ['Damage ratio', fmt(prod.damage_ratio, 3)],
+        ['PI actual / theor.', fmt(prod.productivity_ratio_actual_to_theoretical, 3)],
+        ['p_avg source', prod.p_avg_source || '\u2014'],
+        ['Dietz p-bar gauge (psia)', fmt(derv.dietz_pbar_gauge_psia, 1)],
+        ['Dietz p-bar datum (psia)', fmt(derv.dietz_pbar_datum_psia, 1)],
+        ['p_last datum (psia)', fmt(derv.p_last_datum_psia, 1)],
+        ['Dietz t_pDA', fmt(derv.dietz_tpda, 2)],
+        ['Radius of inv. (ft)', fmt(res.investigation_radius_ft, 0)]
+      ];
+      root.querySelector('#t2-prod-grid').innerHTML = kvs.map(([k, v]) => (
+        '<div class="kv-item"><div class="kv-label">' + esc(k) + '</div><div class="kv-val">' + esc(v) + '</div></div>'
+      )).join('');
+
+      const rh = d.rate_history || {};
+      root.querySelector('#t2-rate-info').innerHTML =
+        (derv.dietz_note ? '<div><strong>Dietz:</strong> ' + esc(derv.dietz_note) + '</div>' : '') +
+        (d.rate_note ? '<div><strong>Rate note:</strong> ' + esc(d.rate_note) + '</div>' : '') +
+        '<div><strong>Rate history:</strong> q_final=' + esc(fmt(rh.q_final_reservoir_bbl_day, 0)) +
+        ' bbl/d, tp=' + esc(fmt(rh.producing_duration_hr, 1)) +
+        ' hr, periods=' + esc(rh.n_periods != null ? rh.n_periods : '\u2014') + '</div>';
+
+      // QC flags
+      const flags = d.qc_flags || [];
+      root.querySelector('#t2-qc-flags').innerHTML = flags.length
+        ? flags.map(f => {
+            const sev = (f.severity || 'INFO').toUpperCase();
+            return '<div class="note-item ' + esc(sev) + '">' +
+              '<span class="note-meta">[' + esc(sev) + (f.code ? ' ' + esc(f.code) : '') + ']</span>' +
+              esc(f.message || '') +
+            '</div>';
+          }).join('')
+        : '<div class="small-muted">No QC flags.</div>';
+
+      // Re-run settings
+      const s = d.settings || {};
+      root.querySelector('#t2-rr-rate').value = s.rate_source || 'vfm_daily';
+      root.querySelector('#t2-rr-basis').value = s.rate_basis || 'oil';
+      root.querySelector('#t2-rr-smooth').value = s.smoothing_L10 != null ? s.smoothing_L10 : 0.1;
+      root.querySelector('#t2-rr-prepend').checked = !!s.prepend_cumulative_history;
+      root.querySelector('#t2-rr-force').checked = !!s.force_manual_radial;
+      const mr = Array.isArray(s.manual_radial_dt_hr) ? s.manual_radial_dt_hr : null;
+      root.querySelector('#t2-rr-rstart').value = mr && mr[0] != null ? mr[0] : '';
+      root.querySelector('#t2-rr-rend').value = mr && mr[1] != null ? mr[1] : '';
+    }
+
+    async function rerunPTA() {
+      if (!ptaData || !ptaData.event_id) return;
+      const rs = root.querySelector('#t2-rr-rstart').value.trim();
+      const re = root.querySelector('#t2-rr-rend').value.trim();
+      let manual = null;
+      if (rs !== '' || re !== '') {
+        if (rs === '' || re === '') {
+          toast('Provide both manual radial start and end (hr), or leave both blank.', 'warn');
+          return;
+        }
+        manual = [Number(rs), Number(re)];
+      }
+      const overrides = {
+        rate_source: root.querySelector('#t2-rr-rate').value,
+        rate_basis: root.querySelector('#t2-rr-basis').value,
+        prepend_cumulative_history: root.querySelector('#t2-rr-prepend').checked,
+        smoothing_L10: Number(root.querySelector('#t2-rr-smooth').value),
+        manual_radial_dt_hr: manual,
+        force_manual_radial: root.querySelector('#t2-rr-force').checked
+      };
+      const updated = await post('/api/pta/rerun', { event: ptaData.event_id, overrides }, 'Re-running PTA...');
+      ptaData = updated;
+      renderPTA(updated);
+      await refreshOverview();
+      renderEventList();
+      toast('PTA re-run complete.', 'success');
+    }
+
+    registerTab({
+      id: 'pta',
+      title: 'PTA',
+      order: 2,
+      render(container) {
+        root = container;
+        buildSkeleton(container);
+      },
+      onShow() {
+        renderEventList();
+        if (selectedEventId) loadEvent(selectedEventId);
+      },
+      onWellChange() {
+        selectedEventId = null;
+        renderEventList();
+        if (selectedEventId) loadEvent(selectedEventId);
+      }
+    });
+  })();
+
+  // =========================================================================
+  // TAB 3: PTA <-> VFM link
+  // =========================================================================
+  (function registerLinkTab() {
+    let root = null;
+    let linkData = null;
+    let selectedEventId = null;
+
+    function buildSkeleton(el) {
+      el.innerHTML =
+        '<div class="card">' +
+          '<div class="card-header">' +
+            '<h3 class="card-title">PTA &harr; VFM comparison</h3>' +
+            '<span class="small-muted">Baseline VFM ignores PTA unless coupling is on and a build-up is set to Use.</span>' +
+          '</div>' +
+          '<div class="table-wrap">' +
+            '<table class="data-table">' +
+              '<thead>' +
+                '<tr>' +
+                  '<th rowspan="2">Event</th>' +
+                  '<th rowspan="2">Status</th>' +
+                  '<th rowspan="2">Use</th>' +
+                  '<th colspan="4" class="group-hdr">kh (mD&middot;ft)</th>' +
+                  '<th colspan="3" class="group-hdr">Skin</th>' +
+                  '<th colspan="5" class="group-hdr">Pressure (psia)</th>' +
+                  '<th colspan="6" class="group-hdr">Productivity (STB/d/psi &amp; ratio)</th>' +
+                  '<th rowspan="2" class="num">Flow eff.</th>' +
+                  '<th rowspan="2" class="num">Dmg ratio</th>' +
+                '</tr>' +
+                '<tr>' +
+                  '<th class="num">Deriv</th><th class="num">Horner</th><th class="num">Model</th><th class="num">VFM J</th>' +
+                  '<th class="num">Deriv</th><th class="num">Horner</th><th class="num">Model</th>' +
+                  '<th class="num">p* gauge</th><th class="num">p&#772; datum PTA</th><th class="num">p_last datum</th><th class="num">Pr VFM base</th><th class="num">Pr VFM coup</th>' +
+                  '<th class="num">PI actual</th><th class="num">PI theor</th><th class="num">PI ideal</th><th class="num">J base</th><th class="num">J coup</th><th class="num">PI/J</th>' +
+                '</tr>' +
+              '</thead>' +
+              '<tbody id="t3-link-body"></tbody>' +
+            '</table>' +
+          '</div>' +
+        '</div>' +
+        '<div class="grid-2">' +
+          '<div class="card" id="t3-editor-card">' +
+            '<div class="card-header">' +
+              '<h3 class="card-title">Decision editor &mdash; <span id="t3-ed-event">Select a row</span></h3>' +
+              '<button type="button" id="t3-apply-btn" class="primary" disabled>Apply decision</button>' +
+            '</div>' +
+            '<div id="t3-ed-form">' +
+              '<div class="form-row">' +
+                '<label class="check-inline"><input type="checkbox" id="t3-d-use"> <strong>Use this build-up</strong></label>' +
+              '</div>' +
+              '<div class="form-row">' +
+                '<label class="check-inline"><input type="checkbox" id="t3-d-ap"> Apply pressure</label>' +
+                '<select id="t3-d-pchoice">' +
+                  '<option value="dietz">dietz</option>' +
+                  '<option value="p_last">p_last</option>' +
+                  '<option value="manual">manual</option>' +
+                '</select>' +
+                '<input type="number" step="0.1" id="t3-d-pman" placeholder="manual Pr datum (psia)" style="width:165px">' +
+              '</div>' +
+              '<div class="form-row">' +
+                '<label class="check-inline"><input type="checkbox" id="t3-d-as"> Apply skin</label>' +
+                '<input type="number" step="0.01" id="t3-d-sover" placeholder="skin override" style="width:120px">' +
+                '<label class="check-inline" style="margin-left:10px"><input type="checkbox" id="t3-d-akh"> Apply kh</label>' +
+                '<input type="number" step="1" id="t3-d-khover" placeholder="kh override (mD-ft)" style="width:140px">' +
+              '</div>' +
+              '<div class="form-row">' +
+                '<label class="check-inline"><input type="checkbox" id="t3-d-api"> Apply PI</label>' +
+                '<select id="t3-d-pichoice">' +
+                  '<option value="actual">actual</option>' +
+                  '<option value="theoretical">theoretical</option>' +
+                  '<option value="manual">manual</option>' +
+                '</select>' +
+                '<input type="number" step="0.001" id="t3-d-piover" placeholder="PI override" style="width:120px">' +
+              '</div>' +
+              '<div class="form-row">' +
+                '<div class="form-field" style="flex:1">' +
+                  '<label>Engineering note</label>' +
+                  '<input type="text" id="t3-d-note" placeholder="Rationale for coupling decision" style="width:100%">' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="card">' +
+            '<div class="card-header"><h3 class="card-title">Coupling &amp; settings notes</h3></div>' +
+            '<div id="t3-notes" class="note-list"></div>' +
+          '</div>' +
+        '</div>';
+
+      root.querySelector('#t3-apply-btn').addEventListener('click', applyDecision);
+    }
+
+    function differsOver10Pct(a, b) {
+      if (a === null || a === undefined || b === null || b === undefined) return false;
+      const na = Number(a);
+      const nb = Number(b);
+      if (!Number.isFinite(na) || !Number.isFinite(nb) || nb === 0) return false;
+      return Math.abs(na - nb) / Math.abs(nb) > 0.10;
+    }
+
+    function renderLink() {
+      if (!root || !linkData) return;
+      const rows = linkData.rows || [];
+      const decisions = (linkData.settings && linkData.settings.decisions) || {};
+
+      if (state.currentEvent && rows.some(r => r.event_id === state.currentEvent)) {
+        selectedEventId = state.currentEvent;
+      } else if (!selectedEventId || !rows.some(r => r.event_id === selectedEventId)) {
+        const wellRow = rows.find(r => r.well_name === state.currentWell);
+        selectedEventId = wellRow ? wellRow.event_id : (rows[0] ? rows[0].event_id : null);
+      }
+
+      const tbody = root.querySelector('#t3-link-body');
+      tbody.innerHTML = rows.map(r => {
+        const dec = decisions[r.event_id] || {};
+        const khDiff = differsOver10Pct(r.kh_derivative, r.kh_from_vfm_j);
+        const prDiff = differsOver10Pct(r.pbar_datum_pta, r.pr_datum_vfm_baseline);
+        const piDiff = differsOver10Pct(r.pi_actual_pta, r.j_vfm_baseline);
+        const khCls = khDiff ? ' diff-warn' : '';
+        const prCls = prDiff ? ' diff-warn' : '';
+        const piCls = piDiff ? ' diff-warn' : '';
+        const sel = r.event_id === selectedEventId ? ' selected' : '';
+        const stCls = statusChipClass(r.status);
+
+        return '<tr class="clickable' + sel + '" data-ev="' + esc(r.event_id) + '">' +
+          '<td><strong>' + esc(r.event_id) + '</strong></td>' +
+          '<td><span class="chip ' + stCls + '">' + esc(r.status || '?') + '</span></td>' +
+          '<td>' + (dec.use ? '<span class="chip green">USE</span>' : '<span class="chip">off</span>') + '</td>' +
+          '<td class="num' + khCls + '">' + esc(fmt(r.kh_derivative, 0)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.kh_horner, 0)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.kh_model, 0)) + '</td>' +
+          '<td class="num' + khCls + '">' + esc(fmt(r.kh_from_vfm_j, 0)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.skin_derivative, 2)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.skin_horner, 2)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.skin_model, 2)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.p_star_gauge, 1)) + '</td>' +
+          '<td class="num' + prCls + '">' + esc(fmt(r.pbar_datum_pta, 1)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.p_last_datum_pta, 1)) + '</td>' +
+          '<td class="num' + prCls + '">' + esc(fmt(r.pr_datum_vfm_baseline, 1)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.pr_datum_vfm_coupled, 1)) + '</td>' +
+          '<td class="num' + piCls + '">' + esc(fmt(r.pi_actual_pta, 3)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.pi_theoretical_pta, 3)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.pi_ideal_pta, 3)) + '</td>' +
+          '<td class="num' + piCls + '">' + esc(fmt(r.j_vfm_baseline, 3)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.j_vfm_coupled, 3)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.pi_ratio_pta_to_vfm, 3)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.flow_efficiency, 3)) + '</td>' +
+          '<td class="num">' + esc(fmt(r.damage_ratio, 3)) + '</td>' +
+        '</tr>';
+      }).join('');
+
+      tbody.querySelectorAll('tr[data-ev]').forEach(tr => {
+        tr.addEventListener('click', () => {
+          selectedEventId = tr.getAttribute('data-ev');
+          state.currentEvent = selectedEventId;
+          renderLink();
+        });
+      });
+
+      populateEditor(selectedEventId, decisions[selectedEventId]);
+      root.querySelector('#t3-notes').innerHTML = renderNotesHtml(linkData.notes || []);
+    }
+
+    function populateEditor(eventId, dec) {
+      if (!root) return;
+      const titleEl = root.querySelector('#t3-ed-event');
+      const btn = root.querySelector('#t3-apply-btn');
+      if (!eventId) {
+        titleEl.textContent = 'Select a row';
+        btn.disabled = true;
+        return;
+      }
+      titleEl.textContent = eventId;
+      btn.disabled = false;
+      const d = dec || {};
+      root.querySelector('#t3-d-use').checked = !!d.use;
+      root.querySelector('#t3-d-ap').checked = !!d.apply_pressure;
+      root.querySelector('#t3-d-pchoice').value = d.pressure_choice || 'p_last';
+      root.querySelector('#t3-d-pman').value = d.manual_pr_datum_psia != null ? d.manual_pr_datum_psia : '';
+      root.querySelector('#t3-d-as').checked = !!d.apply_skin;
+      root.querySelector('#t3-d-sover').value = d.skin_override != null ? d.skin_override : '';
+      root.querySelector('#t3-d-akh').checked = !!d.apply_kh;
+      root.querySelector('#t3-d-khover').value = d.kh_override != null ? d.kh_override : '';
+      root.querySelector('#t3-d-api').checked = !!d.apply_pi;
+      root.querySelector('#t3-d-pichoice').value = d.pi_choice || 'actual';
+      root.querySelector('#t3-d-piover').value = d.pi_override != null ? d.pi_override : '';
+      root.querySelector('#t3-d-note').value = d.note || '';
+    }
+
+    function numOrNull(selector) {
+      const v = root.querySelector(selector).value.trim();
+      return v === '' ? null : Number(v);
+    }
+
+    async function applyDecision() {
+      if (!selectedEventId) return;
+      const decision = {
+        use: root.querySelector('#t3-d-use').checked,
+        apply_pressure: root.querySelector('#t3-d-ap').checked,
+        pressure_choice: root.querySelector('#t3-d-pchoice').value,
+        manual_pr_datum_psia: numOrNull('#t3-d-pman'),
+        apply_skin: root.querySelector('#t3-d-as').checked,
+        skin_override: numOrNull('#t3-d-sover'),
+        apply_kh: root.querySelector('#t3-d-akh').checked,
+        kh_override: numOrNull('#t3-d-khover'),
+        apply_pi: root.querySelector('#t3-d-api').checked,
+        pi_choice: root.querySelector('#t3-d-pichoice').value,
+        pi_override: numOrNull('#t3-d-piover'),
+        note: root.querySelector('#t3-d-note').value
+      };
+      await post('/api/settings', { decisions: { [selectedEventId]: decision } }, 'Applying decision...');
+      await loadLink();
+      await refreshOverview();
+      if (state.currentWell) emit('well', state.currentWell);
+      toast('Decision applied for ' + selectedEventId, 'success');
+    }
+
+    async function loadLink() {
+      if (!root) return;
+      try {
+        linkData = await api('/api/link');
+        renderLink();
+      } catch (err) {
+        toast('Failed loading PTA-VFM link: ' + err.message, 'error');
+      }
+    }
+
+    on('overview', () => {
+      if (root && root.classList.contains('active')) loadLink();
+    });
+
+    registerTab({
+      id: 'link',
+      title: 'PTA \u2194 VFM link',
+      order: 3,
+      render(container) {
+        root = container;
+        buildSkeleton(container);
+      },
+      onShow() {
+        loadLink();
+      },
+      onWellChange(well) {
+        if (!linkData || !linkData.rows) return;
+        const match = linkData.rows.find(r => r.well_name === well);
+        if (match) {
+          selectedEventId = match.event_id;
+          renderLink();
+        }
+      }
+    });
+  })();
+
+  // =========================================================================
+  // Header controls & Startup polling
+  // =========================================================================
+  function bindHeaderEvents() {
+    const sw = document.getElementById('hdr-coupling-switch');
+    sw.addEventListener('change', async () => {
+      const enabled = sw.checked;
+      try {
+        await post('/api/settings', { enabled }, (enabled ? 'Enabling' : 'Disabling') + ' PTA \u2192 VFM coupling...');
+        await refreshOverview();
+        toast('Coupling ' + (enabled ? 'enabled' : 'disabled') + '.', 'success');
+      } catch (_) {
+        renderHeader();
+      }
+    });
+
+    document.getElementById('hdr-dl-vfm-btn').addEventListener('click', () => {
+      const m = encodeURIComponent(state.activeModel || 'physics_wls');
+      window.location.href = '/api/export/vfm?model=' + m + '&rate_type=alloc&format=xlsx';
+    });
+
+    document.getElementById('hdr-dl-pta-btn').addEventListener('click', () => {
+      window.location.href = '/api/export/pta?source=auto&format=xlsx';
+    });
+
+    document.getElementById('hdr-export-btn').addEventListener('click', async () => {
+      const name = window.prompt('Enter scenario folder name:', 'scenario_a');
+      if (!name || !name.trim()) return;
+      const resp = await post('/api/export', { name: name.trim() }, 'Exporting scenario...');
+      const folder = (resp && (resp.folder || resp.path || resp.dir || resp.output_dir)) || name.trim();
+      toast('Exported scenario to: ' + folder, 'success');
+    });
+
+    document.getElementById('hdr-reset-btn').addEventListener('click', async () => {
+      if (!window.confirm('Reset all engineering judgement to baseline defaults?')) return;
+      await post('/api/reset', {}, 'Resetting judgement...');
+      await refreshOverview();
+      if (state.currentWell) emit('well', state.currentWell);
+      toast('Judgement reset to baseline.', 'info');
+    });
+  }
+
+  async function pollStartup() {
+    const banner = document.getElementById('startup-banner');
+    const textEl = document.getElementById('startup-status-text');
+    while (true) {
+      try {
+        const st = await api('/api/status');
+        if (st && st.error) {
+          banner.classList.add('error');
+          textEl.textContent = 'Error: ' + st.error;
+        } else {
+          banner.classList.remove('error');
+          textEl.textContent = 'Server status: ' + ((st && st.status) || 'initializing...');
+        }
+        if (st && st.ready) {
+          banner.style.display = 'none';
+          break;
+        }
+      } catch (err) {
+        banner.classList.add('error');
+        textEl.textContent = 'Status check failed: ' + (err.message || String(err));
+      }
+      await new Promise(r => setTimeout(r, 2000));
+    }
+
+    try {
+      const [ov, mod] = await Promise.all([api('/api/overview'), api('/api/models')]);
+      emit('overview', ov);
+      emit('models', mod);
+      const firstWell = ov && ov.wells && ov.wells[0] ? ov.wells[0].well_name : null;
+      if (firstWell) {
+        emit('well', firstWell);
+      }
+      activateTab('allocation');
+    } catch (err) {
+      banner.style.display = 'flex';
+      banner.classList.add('error');
+      textEl.textContent = 'Failed initial load: ' + (err.message || String(err));
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderTabBar();
+    bindHeaderEvents();
+    pollStartup();
+  });
+})();
+</script>
+<script defer src="/static/tab_models.js"></script>
+<script defer src="/static/tab_monitoring.js"></script>
+<script defer src="/static/tab_audit.js"></script>
+</body>
+</html>
+

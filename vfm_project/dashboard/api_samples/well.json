@@ -1,0 +1,225 @@
+{
+ "well_name": "GL-08",
+ "dates": [
+  "2025-01-01",
+  "2025-01-02",
+  "2025-01-03"
+ ],
+ "baseline": {
+  "oil": [
+   1586.8925,
+   1585.4397,
+   1586.4885
+  ],
+  "water": [
+   314.7575,
+   314.9888,
+   315.7174
+  ],
+  "liquid": [
+   1901.65,
+   1900.4285,
+   1902.2058
+  ],
+  "gas": [
+   531.9855,
+   531.4985,
+   531.8501
+  ],
+  "liquid_vfm": [
+   1927.4622,
+   1926.2511,
+   1928.0797
+  ],
+  "q_ipr": [
+   1921.8364,
+   1900.6648,
+   1907.8644
+  ],
+  "q_choke": [
+   1932.2517,
+   1931.6185,
+   1923.7499
+  ],
+  "q_vlp": [
+   1928.0547,
+   1947.2615,
+   1954.2425
+  ],
+  "pr_datum": [
+   3277.15,
+   3277.02,
+   3276.9
+  ]
+ },
+ "coupled": {
+  "oil": [
+   1585.8024,
+   1583.4223,
+   1584.7092
+  ],
+  "water": [
+   314.5413,
+   314.588,
+   315.3633
+  ],
+  "liquid": [
+   1900.3436,
+   1898.0103,
+   1900.0725
+  ],
+  "gas": [
+   531.62,
+   530.8222,
+   531.2536
+  ],
+  "liquid_vfm": [
+   1927.8293,
+   1925.4893,
+   1927.6083
+  ],
+  "q_ipr": [
+   1923.6834,
+   1902.5,
+   1909.6669
+  ],
+  "q_choke": [
+   1932.2517,
+   1931.6185,
+   1923.7499
+  ],
+  "q_vlp": [
+   1928.0547,
+   1947.2615,
+   1954.2425
+  ],
+  "pr_datum": [
+   3278.1,
+   3277.97,
+   3277.84
+  ],
+  "j_multiplier": [
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ "uptime_frac": [
+  1.0,
+  1.0,
+  1.0
+ ],
+ "tests": [
+  {
+   "t_mid": "2025-01-24T01:57:00+00:00",
+   "oil": 1593.2,
+   "water": 328.0,
+   "liquid": 1921.2,
+   "gas": 534.1
+  },
+  {
+   "t_mid": "2025-02-21T05:51:00+00:00",
+   "oil": 1559.0,
+   "water": 350.5,
+   "liquid": 1909.5,
+   "gas": 505.1
+  },
+  {
+   "t_mid": "2025-03-24T03:59:00+00:00",
+   "oil": 1465.4,
+   "water": 355.9,
+   "liquid": 1821.3,
+   "gas": 483.7
+  }
+ ],
+ "ipr": {
+  "baseline": {
+   "J": 3.4298063101546004,
+   "Pr0_datum_psia": 3277.2066564915917,
+   "decline_psi_per_day": 0.12249999999999998,
+   "loto_mae_stbd": 39.376380690153155,
+   "pr_prior_source": "buildup_anchor"
+  },
+  "coupled": {
+   "J": 3.4272825544381584,
+   "Pr0_datum_psia": 3278.16218100081,
+   "decline_psi_per_day": 0.1305,
+   "loto_mae_stbd": 34.81641175025891,
+   "pr_prior_source": "external_anchor"
+  },
+  "anchors_baseline": [
+   {
+    "timestamp": "2025-08-19T09:00:00+00:00",
+    "pr_datum_psia": 3248.9857189915915,
+    "source": "internal PBU"
+   }
+  ],
+  "anchors_coupled": [
+   {
+    "timestamp": "2025-08-19T09:00:00+00:00",
+    "pr_datum_psia": 3248.09824350081,
+    "source": "PTA GL-08@2025-08-19T09:00"
+   }
+  ]
+ },
+ "weights": {
+  "baseline": {
+   "ipr": 0.0004903312861480192,
+   "choke": 0.0005184781540223264,
+   "vlp": 0.00046467135495474593
+  },
+  "coupled": {
+   "ipr": 0.0005783029548745934,
+   "choke": 0.0005184781540223264,
+   "vlp": 0.00046467135495474593
+  }
+ },
+ "estimators": {
+  "ipr": true,
+  "choke": true,
+  "vlp": true
+ },
+ "condition_timeline": [],
+ "property_changes": [],
+ "events": [
+  {
+   "event_id": "GL-08@2025-08-19T09:00",
+   "well_name": "GL-08",
+   "shut_in_start": "2025-08-19T09:00:00+00:00",
+   "duration_hr": 72.0,
+   "status": "RADIAL",
+   "kh_md_ft": 3454.44522788352,
+   "k_md": 53.145311198208,
+   "skin": -1.7742188890940593,
+   "p_star_gauge_psia": 3464.1901841314566,
+   "dietz_pbar_datum_psia": 3248.09824350081,
+   "p_last_datum_psia": 3215.9339959104514,
+   "rate_source": "vfm_daily",
+   "use": true,
+   "apply_pressure": true,
+   "pressure_choice": "dietz",
+   "apply_skin": true,
+   "apply_kh": false,
+   "n_block_flags": 0
+  }
+ ],
+ "notes": [
+  {
+   "well_name": "GL-08",
+   "event_id": "GL-08@2025-08-19T09:00",
+   "level": "INFO",
+   "message": "Pr anchor 3248.1 psia at datum (Dietz average pressure)."
+  },
+  {
+   "well_name": "GL-08",
+   "level": "INFO",
+   "message": "Reference condition skin=-1.7742188890940593, kh=None; no later change, J unchanged (needs a later PTA or engineer change)."
+  },
+  {
+   "well_name": "GL-08",
+   "event_id": "GL-08@2025-08-19T09:00",
+   "level": "INFO",
+   "message": "IPR J fixed to 3.427 STB/d/psi from PTA (actual; Dietz average pressure)."
+  }
+ ]
+}

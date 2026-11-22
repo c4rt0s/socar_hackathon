@@ -1,0 +1,251 @@
+{
+ "event_id": "GL-08@2025-08-19T09:00",
+ "well_name": "GL-08",
+ "status": "RADIAL",
+ "shut_in_start": "2025-08-19T09:00:00+00:00",
+ "shut_in_end": "2025-08-22T09:00:00+00:00",
+ "duration_hr": 72.0,
+ "settings": {
+  "rate_source": "vfm_daily",
+  "prepend_cumulative_history": true,
+  "points_per_cycle": 20,
+  "smoothing_L10": 0.1,
+  "manual_radial_dt_hr": null,
+  "force_manual_radial": false,
+  "pre_shut_in_context_days": 5,
+  "dietz_shape_factor": 31.62,
+  "cumulative_oil_column": "cum_oil_at_2025_01_01_stb",
+  "cumulative_oil_date": "2025-01-01T00:00:00Z"
+ },
+ "rate_note": "VFM daily allocation (24-h averages; on-stream rate carried into the shut-in day); cumulative-average pre-history 2063 STB/d oil from 2018-05-17",
+ "datum": {
+  "gauge_tvd_ft": 8040.0,
+  "datum_tvd_ft": 8200.0,
+  "fluid_gradient_psi_ft": 0.3586499744403198
+ },
+ "series": {
+  "dt_hr": [
+   0.016666666666666666,
+   0.03333333333333333,
+   0.05,
+   0.06666666666666667
+  ],
+  "dp_psi": [
+   81.14999999999964,
+   129.97999999999956,
+   163.07999999999993,
+   186.97999999999956
+  ],
+  "derivative_psi": [
+   null,
+   77.50570257160435,
+   82.4790896018161,
+   81.57838782419053
+  ]
+ },
+ "radial_interval": {
+  "n_points": 27,
+  "log_cycles": 1.3013047786417675,
+  "sigma_log10": 0.004224496436232361,
+  "trend_per_cycle": -0.010114872982188721,
+  "max_gap_cycles": 0.05176291535447136,
+  "score": -0.008788551350185313,
+  "selection": "automatic",
+  "accepted": true,
+  "dt_start_hr": 2.6333333333333333,
+  "dt_end_hr": 52.7,
+  "failed_checks": [],
+  "excluded_hump": {
+   "dt_hr": 0.05,
+   "derivative_psi": 82.4790896018161,
+   "search_starts_dt_hr": 0.16666666666666666
+  }
+ },
+ "flow_regimes": {
+  "segments": [
+   {
+    "signature": "ZERO_SLOPE",
+    "dt_start_hr": 0.9333333333333333,
+    "dt_end_hr": 37.31666666666667,
+    "possible_interpretation": "possible radial flow"
+   }
+  ],
+  "late_time": null,
+  "note": "Signatures are possible interpretations, not classifications."
+ },
+ "results": {
+  "radial_derivative_psi": 40.59712098403585,
+  "semilog_slope_psi_per_cycle": 93.47832559631671,
+  "mobility_thickness": 3758.917549383591,
+  "kh_md_ft": 3454.44522788352,
+  "k_md": 53.145311198208,
+  "apparent_skin": -1.7742188890940593,
+  "skin_pressure_drop_psi": -144.0563577854264,
+  "storage_bbl_per_psi": null,
+  "dimensionless_storage": null,
+  "extrapolated_pressure_psi": 3464.1901841314566,
+  "investigation_radius_ft": 1247.1841997566808,
+  "flow_efficiency": 1.174100921803621,
+  "kh_ratio_pta_to_reference": null,
+  "equivalent_producing_time_hr": 82979.43092798966
+ },
+ "derived": {
+  "dietz_pbar_gauge_psia": 3190.714247590359,
+  "dietz_dt_bar_hr": 158.15048342369408,
+  "dietz_tpda": 12.724771995247925,
+  "dietz_note": "C_A=31.62, A=620 acres, t_pDA=12.7",
+  "dietz_pbar_datum_psia": 3248.09824350081,
+  "p_last_gauge_psia": 3158.55,
+  "p_last_datum_psia": 3215.9339959104514,
+  "p_wf_gauge_psia": 2636.76
+ },
+ "internal_pbu": {
+  "quality_flag": "RADIAL_MBH",
+  "pr_datum_psia": 3248.9857189915915,
+  "pr_gauge_psia": 3191.653783786639,
+  "p_star_gauge_psia": 3431.5356406098067,
+  "kh_md_ft": 3330.5060718099917,
+  "skin": -1.6985018083402104,
+  "k_md": 51.238554950922946
+ },
+ "qc_flags": [
+  {
+   "severity": "INFO",
+   "code": "SINGLE_PHASE_EQUIVALENT_ASSUMED",
+   "message": "q_r = qo*Bo + qw*Bw treats oil-water flow as single-phase-equivalent; relative permeability and saturation changes are not modelled.",
+   "affected_outputs": []
+  },
+  {
+   "severity": "INFO",
+   "code": "NO_REFERENCE_KH",
+   "message": "No independent kh supplied; kh ratio not reported.",
+   "affected_outputs": []
+  },
+  {
+   "severity": "INFO",
+   "code": "REFERENCE_FROM_SAMPLED_DATA",
+   "message": "t_s is the last sampled flowing pressure, an approximation of sandface shut-in.",
+   "affected_outputs": []
+  },
+  {
+   "severity": "WARN",
+   "code": "STORAGE_NOT_RESOLVED",
+   "message": "No resolved early unit-slope interval; storage is not estimated.",
+   "affected_outputs": [
+    "storage_bbl_per_psi",
+    "dimensionless_storage"
+   ]
+  }
+ ],
+ "decision": {
+  "use": true,
+  "apply_pressure": true,
+  "pressure_choice": "dietz",
+  "manual_pr_datum_psia": null,
+  "apply_skin": true,
+  "skin_override": null,
+  "apply_kh": false,
+  "kh_override": null,
+  "apply_pi": true,
+  "pi_choice": "actual",
+  "pi_override": null,
+  "note": ""
+ },
+ "rate_history": {
+  "q_final_reservoir_bbl_day": 2161.4905172994504,
+  "producing_duration_hr": 63633.0,
+  "n_periods": 10
+ },
+ "methods": {
+  "horner": {
+   "m": 93.43756011812405,
+   "kh": 3456.749413163413,
+   "k": 53.180760202514044,
+   "p_star": 3444.9867316603186,
+   "p_1hr": 2985.3696452945305,
+   "skin": -1.7697883274431865,
+   "r2": 0.9999821327088315,
+   "n_points": 27,
+   "notes": []
+  },
+  "mdh": {
+   "m": 93.4207680040895,
+   "kh": 3457.370753916384,
+   "k": 53.19031929102129,
+   "p_1hr": 2985.3797485950813,
+   "skin": -1.768981801784281,
+   "r2": 0.9999815965318266,
+   "n_points": 27,
+   "valid": true,
+   "notes": []
+  },
+  "model_match": {
+   "k_md": 53.87084783840181,
+   "kh_md_ft": 3501.6051094961176,
+   "skin": -1.6990869680203144,
+   "c_bbl_psi": 0.012619611832310784,
+   "cd": 944.8938831520317,
+   "rms_psi": 0.07660260020867732,
+   "iterations": 169,
+   "converged": true,
+   "dt_model_hr": [
+    0.016666666666666666,
+    0.02065695396102795,
+    0.025602584816881702,
+    0.031732284950738314
+   ],
+   "dp_model_psi": [
+    81.40275178515243,
+    95.0725825870104,
+    110.08413830722436,
+    126.26565442405989
+   ],
+   "deriv_model_psi": [
+    63.686861906334,
+    66.81236692648434,
+    72.66325704084468,
+    77.50387494860229
+   ],
+   "notes": []
+  },
+  "productivity": {
+   "pi_actual_stbd_psi": 3.4272825544381584,
+   "pi_theoretical_stbd_psi": 3.4257086885890717,
+   "pi_ideal_stbd_psi": 2.718964056346139,
+   "flow_efficiency": 1.260051003150632,
+   "damage_ratio": 0.7936186690059368,
+   "productivity_ratio_actual_to_theoretical": 1.0004594278125076,
+   "p_avg_source": "Dietz average pressure",
+   "notes": []
+  },
+  "notes": [],
+  "window_source": "accepted radial window"
+ },
+ "link": {
+  "event_id": "GL-08@2025-08-19T09:00",
+  "well_name": "GL-08",
+  "status": "RADIAL",
+  "kh_derivative": 3454.44522788352,
+  "kh_horner": 3456.749413163413,
+  "kh_model": 3501.6051094961176,
+  "kh_from_vfm_j": 3489.4689148709576,
+  "skin_derivative": -1.7742188890940593,
+  "skin_horner": -1.7697883274431865,
+  "skin_model": -1.6990869680203144,
+  "p_star_gauge": 3464.1901841314566,
+  "p_star_horner_gauge": 3444.9867316603186,
+  "pbar_datum_pta": 3248.09824350081,
+  "p_last_datum_pta": 3215.9339959104514,
+  "pr_datum_vfm_baseline": 3248.9857189915915,
+  "pr_datum_vfm_coupled": 3248.09824350081,
+  "pi_actual_pta": 3.4272825544381584,
+  "pi_theoretical_pta": 3.4257086885890717,
+  "pi_ideal_pta": 2.718964056346139,
+  "flow_efficiency": 1.260051003150632,
+  "damage_ratio": 0.7936186690059368,
+  "pi_avg_source": "Dietz average pressure",
+  "j_vfm_baseline": 3.4298063101546004,
+  "j_vfm_coupled": 3.4272825544381584,
+  "pi_ratio_pta_to_vfm": 0.9992641696095287
+ }
+}

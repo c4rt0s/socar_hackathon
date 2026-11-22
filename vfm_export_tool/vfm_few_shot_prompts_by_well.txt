@@ -1,0 +1,214 @@
+================================================================================
+FEW-SHOT SYNTHETIC DATA PROMPT — WELL GL-01 (SCADA ENVELOPE + MATERIAL BALANCE)
+================================================================================
+STATIC COMPLETION, PVT & ENVELOPE CONSTRAINTS (GL-01):
+  - Gauge TVD: 9380 ft | GL Valve TVD: 3940 ft | Tubing ID: 2.992 in
+  - Drainage Area: 110 acres | Material-Balance dPr/dt: -0.290 psi/day | Pr0: 3562.6 psia
+  - Real SCADA Choke Envelope: [26.5%, 48.5%] | Downstream Manifold/Separator Envelope: [168.0, 214.9] psia
+  - Pb: 1304 psia | Bo: 1.160 | mu_o: 1.054 cp | Rs@Pb: 277.8
+
+FEW-SHOT HISTORICAL SEPARATOR TESTS (9 shots for GL-01):
+  Shot 1: date=2025-01-03 | choke=40.6% | Pdh=3232.8 | Tdh=203.17F | WHP=280.2 | Pds=175.3 | Pann=1166.4 | Qgl=820.1 -> Qo=1157.6, Qw=832.3, Qg=336.0
+  Shot 2: date=2025-01-31 | choke=40.6% | Pdh=3221.2 | Tdh=203.17F | WHP=277.4 | Pds=173.6 | Pann=1160.3 | Qgl=819.3 -> Qo=1201.6, Qw=795.0, Qg=323.6
+  Shot 3: date=2025-03-03 | choke=40.6% | Pdh=3229.0 | Tdh=203.11F | WHP=274.9 | Pds=174.9 | Pann=1155.6 | Qgl=821.4 -> Qo=1135.5, Qw=833.6, Qg=314.6
+  Shot 4: date=2025-04-02 | choke=37.5% | Pdh=3232.1 | Tdh=203.05F | WHP=293.1 | Pds=170.4 | Pann=1164.0 | Qgl=830.3 -> Qo=1078.4, Qw=816.5, Qg=316.1
+  Shot 5: date=2025-05-03 | choke=37.5% | Pdh=3232.7 | Tdh=203.00F | WHP=288.8 | Pds=169.1 | Pann=1155.8 | Qgl=829.5 -> Qo=984.8, Qw=755.4, Qg=249.3
+  Shot 6: date=2025-06-02 | choke=37.5% | Pdh=3223.4 | Tdh=202.98F | WHP=284.7 | Pds=166.7 | Pann=1146.4 | Qgl=827.6 -> Qo=1007.6, Qw=723.8, Qg=252.9
+  Shot 7: date=2025-07-03 | choke=37.5% | Pdh=3222.2 | Tdh=202.92F | WHP=280.2 | Pds=165.4 | Pann=1136.8 | Qgl=828.0 -> Qo=900.6, Qw=772.0, Qg=255.0
+  Shot 8: date=2025-08-02 | choke=35.9% | Pdh=3224.5 | Tdh=202.86F | WHP=278.3 | Pds=162.1 | Pann=1114.1 | Qgl=762.3 -> Qo=811.3, Qw=723.4, Qg=231.7
+  Shot 9: date=2025-09-03 | choke=35.9% | Pdh=3218.8 | Tdh=202.82F | WHP=273.5 | Pds=162.0 | Pann=1103.6 | Qgl=758.7 -> Qo=791.2, Qw=711.7, Qg=201.7
+
+TASK: Generate 180 physics-gated steady-state rows for GL-01 spanning its real choke envelope [26.5%, 48.5%] and BOTH test-separator & production-manifold backpressures [168.0, 214.9] psia.
+
+================================================================================
+FEW-SHOT SYNTHETIC DATA PROMPT — WELL GL-02 (SCADA ENVELOPE + MATERIAL BALANCE)
+================================================================================
+STATIC COMPLETION, PVT & ENVELOPE CONSTRAINTS (GL-02):
+  - Gauge TVD: 7980 ft | GL Valve TVD: 3030 ft | Tubing ID: 2.992 in
+  - Drainage Area: 240 acres | Material-Balance dPr/dt: -0.182 psi/day | Pr0: 3196.6 psia
+  - Real SCADA Choke Envelope: [43.9%, 70.0%] | Downstream Manifold/Separator Envelope: [152.3, 199.4] psia
+  - Pb: 1301 psia | Bo: 1.149 | mu_o: 1.019 cp | Rs@Pb: 301.4
+
+FEW-SHOT HISTORICAL SEPARATOR TESTS (8 shots for GL-02):
+  Shot 1: date=2025-01-06 | choke=51.6% | Pdh=2861.1 | Tdh=175.12F | WHP=230.9 | Pds=158.5 | Pann=1030.3 | Qgl=835.0 -> Qo=1432.3, Qw=1436.9, Qg=447.8
+  Shot 2: date=2025-02-04 | choke=51.6% | Pdh=2863.1 | Tdh=175.09F | WHP=228.3 | Pds=157.6 | Pann=1028.9 | Qgl=841.5 -> Qo=1404.3, Qw=1418.6, Qg=412.0
+  Shot 3: date=2025-04-05 | choke=51.6% | Pdh=2867.4 | Tdh=175.00F | WHP=231.2 | Pds=156.7 | Pann=1076.9 | Qgl=958.4 -> Qo=1298.1, Qw=1491.8, Qg=380.0
+  Shot 4: date=2025-05-06 | choke=51.6% | Pdh=2861.5 | Tdh=174.98F | WHP=229.7 | Pds=155.8 | Pann=1072.7 | Qgl=957.5 -> Qo=1285.8, Qw=1548.6, Qg=397.3
+  Shot 5: date=2025-06-05 | choke=54.7% | Pdh=2857.6 | Tdh=174.95F | WHP=217.2 | Pds=156.1 | Pann=1066.9 | Qgl=960.2 -> Qo=1262.7, Qw=1585.5, Qg=395.6
+  Shot 6: date=2025-07-06 | choke=54.7% | Pdh=2856.7 | Tdh=174.92F | WHP=212.6 | Pds=156.5 | Pann=1030.3 | Qgl=891.6 -> Qo=1237.3, Qw=1523.9, Qg=367.0
+  Shot 7: date=2025-08-06 | choke=54.7% | Pdh=2850.5 | Tdh=174.89F | WHP=214.3 | Pds=156.4 | Pann=1054.5 | Qgl=950.6 -> Qo=1174.7, Qw=1437.1, Qg=349.3
+  Shot 8: date=2025-09-06 | choke=60.9% | Pdh=2838.0 | Tdh=174.88F | WHP=195.4 | Pds=156.0 | Pann=1040.5 | Qgl=946.1 -> Qo=1149.1, Qw=1569.2, Qg=346.4
+
+TASK: Generate 180 physics-gated steady-state rows for GL-02 spanning its real choke envelope [43.9%, 70.0%] and BOTH test-separator & production-manifold backpressures [152.3, 199.4] psia.
+
+================================================================================
+FEW-SHOT SYNTHETIC DATA PROMPT — WELL GL-03 (SCADA ENVELOPE + MATERIAL BALANCE)
+================================================================================
+STATIC COMPLETION, PVT & ENVELOPE CONSTRAINTS (GL-03):
+  - Gauge TVD: 8130 ft | GL Valve TVD: 4060 ft | Tubing ID: 2.441 in
+  - Drainage Area: 200 acres | Material-Balance dPr/dt: -0.152 psi/day | Pr0: 3218.6 psia
+  - Real SCADA Choke Envelope: [23.9%, 57.5%] | Downstream Manifold/Separator Envelope: [152.7, 199.8] psia
+  - Pb: 1212 psia | Bo: 1.121 | mu_o: 1.713 cp | Rs@Pb: 222.0
+
+FEW-SHOT HISTORICAL SEPARATOR TESTS (9 shots for GL-03):
+  Shot 1: date=2025-01-09 | choke=28.1% | Pdh=2608.0 | Tdh=184.63F | WHP=311.5 | Pds=156.2 | Pann=1142.7 | Qgl=659.7 -> Qo=755.5, Qw=356.4, Qg=177.0
+  Shot 2: date=2025-02-07 | choke=28.1% | Pdh=2602.8 | Tdh=184.61F | WHP=309.9 | Pds=155.0 | Pann=1141.0 | Qgl=663.2 -> Qo=729.8, Qw=341.7, Qg=163.4
+  Shot 3: date=2025-03-09 | choke=32.8% | Pdh=2542.8 | Tdh=184.77F | WHP=257.9 | Pds=157.1 | Pann=1095.7 | Qgl=661.1 -> Qo=761.7, Qw=344.3, Qg=168.0
+  Shot 4: date=2025-04-08 | choke=32.8% | Pdh=2561.4 | Tdh=184.68F | WHP=252.0 | Pds=156.1 | Pann=1080.0 | Qgl=620.2 -> Qo=712.5, Qw=373.0, Qg=154.5
+  Shot 5: date=2025-05-09 | choke=37.5% | Pdh=2519.7 | Tdh=184.77F | WHP=220.2 | Pds=155.8 | Pann=1050.0 | Qgl=619.7 -> Qo=729.0, Qw=385.4, Qg=159.8
+  Shot 6: date=2025-06-08 | choke=37.5% | Pdh=2509.8 | Tdh=184.75F | WHP=219.9 | Pds=158.1 | Pann=1044.1 | Qgl=617.5 -> Qo=782.0, Qw=382.5, Qg=184.2
+  Shot 7: date=2025-07-09 | choke=43.8% | Pdh=2483.6 | Tdh=184.79F | WHP=195.4 | Pds=159.4 | Pann=1024.2 | Qgl=619.5 -> Qo=762.7, Qw=391.5, Qg=172.2
+  Shot 8: date=2025-08-09 | choke=43.8% | Pdh=2491.4 | Tdh=184.73F | WHP=193.6 | Pds=157.6 | Pann=1025.0 | Qgl=621.7 -> Qo=786.5, Qw=410.4, Qg=148.4
+  Shot 9: date=2025-09-09 | choke=50.0% | Pdh=2478.6 | Tdh=184.72F | WHP=178.1 | Pds=158.0 | Pann=984.0 | Qgl=557.6 -> Qo=733.8, Qw=417.3, Qg=167.2
+
+TASK: Generate 180 physics-gated steady-state rows for GL-03 spanning its real choke envelope [23.9%, 57.5%] and BOTH test-separator & production-manifold backpressures [152.7, 199.8] psia.
+
+================================================================================
+FEW-SHOT SYNTHETIC DATA PROMPT — WELL GL-04 (SCADA ENVELOPE + MATERIAL BALANCE)
+================================================================================
+STATIC COMPLETION, PVT & ENVELOPE CONSTRAINTS (GL-04):
+  - Gauge TVD: 8240 ft | GL Valve TVD: 5770 ft | Tubing ID: 3.958 in
+  - Drainage Area: 540 acres | Material-Balance dPr/dt: -0.125 psi/day | Pr0: 3182.9 psia
+  - Real SCADA Choke Envelope: [21.2%, 39.6%] | Downstream Manifold/Separator Envelope: [150.3, 199.2] psia
+  - Pb: 1265 psia | Bo: 1.136 | mu_o: 1.725 cp | Rs@Pb: 237.5
+
+FEW-SHOT HISTORICAL SEPARATOR TESTS (9 shots for GL-04):
+  Shot 1: date=2025-01-12 | choke=31.2% | Pdh=2324.8 | Tdh=186.61F | WHP=368.1 | Pds=154.2 | Pann=1338.1 | Qgl=1467.3 -> Qo=822.6, Qw=355.8, Qg=231.4
+  Shot 2: date=2025-02-09 | choke=31.2% | Pdh=2327.4 | Tdh=186.58F | WHP=370.7 | Pds=156.0 | Pann=1341.3 | Qgl=1473.0 -> Qo=839.7, Qw=368.8, Qg=179.5
+  Shot 3: date=2025-03-12 | choke=31.2% | Pdh=2319.0 | Tdh=186.57F | WHP=381.3 | Pds=155.5 | Pann=1353.6 | Qgl=1587.3 -> Qo=788.1, Qw=348.4, Qg=183.1
+  Shot 4: date=2025-04-11 | choke=26.6% | Pdh=2447.8 | Tdh=186.10F | WHP=475.0 | Pds=152.7 | Pann=1452.9 | Qgl=1596.0 -> Qo=690.3, Qw=304.9, Qg=184.9
+  Shot 5: date=2025-05-12 | choke=32.8% | Pdh=2277.0 | Tdh=186.63F | WHP=356.1 | Pds=156.1 | Pann=1322.5 | Qgl=1581.7 -> Qo=820.1, Qw=346.3, Qg=189.1
+  Shot 6: date=2025-06-11 | choke=32.8% | Pdh=2292.1 | Tdh=186.55F | WHP=356.8 | Pds=156.9 | Pann=1330.5 | Qgl=1586.0 -> Qo=807.9, Qw=374.9, Qg=224.9
+  Shot 7: date=2025-07-13 | choke=32.8% | Pdh=2285.2 | Tdh=186.53F | WHP=354.9 | Pds=155.9 | Pann=1324.9 | Qgl=1587.4 -> Qo=800.6, Qw=379.1, Qg=165.5
+  Shot 8: date=2025-08-12 | choke=29.7% | Pdh=2351.4 | Tdh=186.27F | WHP=404.9 | Pds=153.6 | Pann=1376.3 | Qgl=1595.4 -> Qo=732.3, Qw=344.2, Qg=182.0
+  Shot 9: date=2025-09-11 | choke=25.0% | Pdh=2508.9 | Tdh=185.68F | WHP=481.8 | Pds=149.4 | Pann=1467.3 | Qgl=1434.5 -> Qo=578.2, Qw=307.6, Qg=142.7
+
+TASK: Generate 180 physics-gated steady-state rows for GL-04 spanning its real choke envelope [21.2%, 39.6%] and BOTH test-separator & production-manifold backpressures [150.3, 199.2] psia.
+
+================================================================================
+FEW-SHOT SYNTHETIC DATA PROMPT — WELL GL-05 (SCADA ENVELOPE + MATERIAL BALANCE)
+================================================================================
+STATIC COMPLETION, PVT & ENVELOPE CONSTRAINTS (GL-05):
+  - Gauge TVD: 9690 ft | GL Valve TVD: 4650 ft | Tubing ID: 2.992 in
+  - Drainage Area: 140 acres | Material-Balance dPr/dt: -0.205 psi/day | Pr0: 3874.1 psia
+  - Real SCADA Choke Envelope: [30.5%, 48.5%] | Downstream Manifold/Separator Envelope: [160.5, 207.0] psia
+  - Pb: 1595 psia | Bo: 1.166 | mu_o: 1.058 cp | Rs@Pb: 325.7
+
+FEW-SHOT HISTORICAL SEPARATOR TESTS (8 shots for GL-05):
+  Shot 1: date=2025-01-15 | choke=42.2% | Pdh=2825.9 | Tdh=203.60F | WHP=234.2 | Pds=165.4 | Pann=1052.2 | Qgl=988.3 -> Qo=879.6, Qw=409.8, Qg=239.4
+  Shot 2: date=2025-02-12 | choke=42.2% | Pdh=2827.3 | Tdh=203.57F | WHP=235.4 | Pds=165.8 | Pann=1053.7 | Qgl=987.4 -> Qo=851.3, Qw=418.0, Qg=253.0
+  Shot 3: date=2025-03-15 | choke=42.2% | Pdh=2830.6 | Tdh=203.52F | WHP=233.7 | Pds=165.0 | Pann=1052.4 | Qgl=987.4 -> Qo=852.3, Qw=410.7, Qg=266.0
+  Shot 4: date=2025-04-15 | choke=35.9% | Pdh=2895.0 | Tdh=203.26F | WHP=274.8 | Pds=162.7 | Pann=1092.5 | Qgl=989.8 -> Qo=821.4, Qw=385.3, Qg=254.0
+  Shot 5: date=2025-05-15 | choke=35.9% | Pdh=2901.4 | Tdh=203.20F | WHP=274.6 | Pds=163.1 | Pann=1094.4 | Qgl=988.9 -> Qo=784.1, Qw=432.4, Qg=255.7
+  Shot 6: date=2025-07-16 | choke=35.9% | Pdh=2945.7 | Tdh=202.97F | WHP=255.8 | Pds=161.1 | Pann=1059.4 | Qgl=819.1 -> Qo=702.2, Qw=430.2, Qg=224.2
+  Shot 7: date=2025-08-15 | choke=35.9% | Pdh=2937.0 | Tdh=202.95F | WHP=265.7 | Pds=162.6 | Pann=1078.0 | Qgl=909.0 -> Qo=697.2, Qw=452.8, Qg=252.8
+  Shot 8: date=2025-09-14 | choke=35.9% | Pdh=2924.6 | Tdh=202.94F | WHP=263.5 | Pds=161.1 | Pann=1072.3 | Qgl=909.5 -> Qo=733.3, Qw=413.9, Qg=200.1
+
+TASK: Generate 180 physics-gated steady-state rows for GL-05 spanning its real choke envelope [30.5%, 48.5%] and BOTH test-separator & production-manifold backpressures [160.5, 207.0] psia.
+
+================================================================================
+FEW-SHOT SYNTHETIC DATA PROMPT — WELL GL-06 (SCADA ENVELOPE + MATERIAL BALANCE)
+================================================================================
+STATIC COMPLETION, PVT & ENVELOPE CONSTRAINTS (GL-06):
+  - Gauge TVD: 7600 ft | GL Valve TVD: 3500 ft | Tubing ID: 2.992 in
+  - Drainage Area: 120 acres | Material-Balance dPr/dt: -0.171 psi/day | Pr0: 2874.5 psia
+  - Real SCADA Choke Envelope: [22.6%, 43.1%] | Downstream Manifold/Separator Envelope: [154.0, 191.8] psia
+  - Pb: 1231 psia | Bo: 1.120 | mu_o: 2.443 cp | Rs@Pb: 217.0
+
+FEW-SHOT HISTORICAL SEPARATOR TESTS (9 shots for GL-06):
+  Shot 1: date=2025-01-18 | choke=29.7% | Pdh=2711.9 | Tdh=169.46F | WHP=339.0 | Pds=159.8 | Pann=1142.1 | Qgl=747.9 -> Qo=805.7, Qw=506.5, Qg=194.0
+  Shot 2: date=2025-02-15 | choke=29.7% | Pdh=2709.2 | Tdh=169.44F | WHP=336.2 | Pds=159.5 | Pann=1136.9 | Qgl=750.4 -> Qo=823.3, Qw=525.5, Qg=190.8
+  Shot 3: date=2025-03-18 | choke=26.6% | Pdh=2724.5 | Tdh=169.32F | WHP=367.4 | Pds=155.5 | Pann=1147.4 | Qgl=747.8 -> Qo=662.6, Qw=459.5, Qg=129.7
+  Shot 4: date=2025-04-18 | choke=26.6% | Pdh=2714.3 | Tdh=169.31F | WHP=388.6 | Pds=154.9 | Pann=1197.4 | Qgl=868.8 -> Qo=692.5, Qw=432.2, Qg=136.3
+  Shot 5: date=2025-05-19 | choke=26.6% | Pdh=2711.8 | Tdh=169.27F | WHP=383.0 | Pds=154.7 | Pann=1190.0 | Qgl=870.1 -> Qo=626.3, Qw=438.5, Qg=139.8
+  Shot 6: date=2025-06-18 | choke=29.7% | Pdh=2685.4 | Tdh=169.36F | WHP=316.3 | Pds=158.4 | Pann=1096.8 | Qgl=718.0 -> Qo=713.5, Qw=500.4, Qg=147.9
+  Shot 7: date=2025-07-19 | choke=29.7% | Pdh=2676.2 | Tdh=169.34F | WHP=314.0 | Pds=156.9 | Pann=1091.4 | Qgl=720.8 -> Qo=712.8, Qw=506.5, Qg=124.6
+  Shot 8: date=2025-08-18 | choke=32.8% | Pdh=2657.4 | Tdh=169.38F | WHP=282.6 | Pds=159.3 | Pann=1069.4 | Qgl=720.7 -> Qo=744.1, Qw=572.2, Qg=135.1
+  Shot 9: date=2025-09-18 | choke=32.8% | Pdh=2648.8 | Tdh=169.37F | WHP=279.6 | Pds=158.5 | Pann=1062.9 | Qgl=721.8 -> Qo=695.1, Qw=556.5, Qg=157.4
+
+TASK: Generate 180 physics-gated steady-state rows for GL-06 spanning its real choke envelope [22.6%, 43.1%] and BOTH test-separator & production-manifold backpressures [154.0, 191.8] psia.
+
+================================================================================
+FEW-SHOT SYNTHETIC DATA PROMPT — WELL GL-07 (SCADA ENVELOPE + MATERIAL BALANCE)
+================================================================================
+STATIC COMPLETION, PVT & ENVELOPE CONSTRAINTS (GL-07):
+  - Gauge TVD: 7450 ft | GL Valve TVD: 2680 ft | Tubing ID: 3.958 in
+  - Drainage Area: 260 acres | Material-Balance dPr/dt: -0.254 psi/day | Pr0: 3205.4 psia
+  - Real SCADA Choke Envelope: [54.5%, 82.0%] | Downstream Manifold/Separator Envelope: [173.9, 211.7] psia
+  - Pb: 1325 psia | Bo: 1.138 | mu_o: 1.367 cp | Rs@Pb: 268.3
+
+FEW-SHOT HISTORICAL SEPARATOR TESTS (9 shots for GL-07):
+  Shot 1: date=2025-01-21 | choke=64.1% | Pdh=2741.1 | Tdh=169.10F | WHP=284.0 | Pds=179.7 | Pann=1115.0 | Qgl=1122.3 -> Qo=4696.0, Qw=1694.8, Qg=1185.1
+  Shot 2: date=2025-02-18 | choke=67.2% | Pdh=2729.2 | Tdh=169.13F | WHP=271.5 | Pds=180.3 | Pann=1081.6 | Qgl=1057.7 -> Qo=4807.8, Qw=1797.4, Qg=1254.0
+  Shot 3: date=2025-03-21 | choke=71.9% | Pdh=2728.2 | Tdh=169.11F | WHP=254.1 | Pds=181.6 | Pann=1073.8 | Qgl=1064.3 -> Qo=4789.2, Qw=1882.9, Qg=1282.1
+  Shot 4: date=2025-04-21 | choke=71.9% | Pdh=2730.0 | Tdh=169.10F | WHP=252.0 | Pds=180.9 | Pann=1072.0 | Qgl=1064.8 -> Qo=4733.7, Qw=1918.9, Qg=1222.8
+  Shot 5: date=2025-05-21 | choke=71.9% | Pdh=2734.3 | Tdh=169.07F | WHP=243.7 | Pds=178.9 | Pann=1011.5 | Qgl=909.8 -> Qo=4446.9, Qw=1956.2, Qg=1210.4
+  Shot 6: date=2025-06-21 | choke=71.9% | Pdh=2736.3 | Tdh=169.04F | WHP=244.6 | Pds=178.9 | Pann=1011.6 | Qgl=913.5 -> Qo=4344.9, Qw=2124.3, Qg=1145.9
+  Shot 7: date=2025-07-22 | choke=71.9% | Pdh=2735.6 | Tdh=169.03F | WHP=241.1 | Pds=178.0 | Pann=1006.7 | Qgl=908.2 -> Qo=4250.5, Qw=2044.0, Qg=1106.2
+  Shot 8: date=2025-08-21 | choke=71.9% | Pdh=2739.3 | Tdh=169.00F | WHP=237.7 | Pds=176.5 | Pann=1005.0 | Qgl=912.1 -> Qo=4132.3, Qw=2114.3, Qg=1077.2
+  Shot 9: date=2025-09-21 | choke=68.8% | Pdh=2750.8 | Tdh=168.95F | WHP=238.9 | Pds=172.7 | Pann=991.9 | Qgl=870.2 -> Qo=3920.5, Qw=2088.3, Qg=995.3
+
+TASK: Generate 180 physics-gated steady-state rows for GL-07 spanning its real choke envelope [54.5%, 82.0%] and BOTH test-separator & production-manifold backpressures [173.9, 211.7] psia.
+
+================================================================================
+FEW-SHOT SYNTHETIC DATA PROMPT — WELL GL-08 (SCADA ENVELOPE + MATERIAL BALANCE)
+================================================================================
+STATIC COMPLETION, PVT & ENVELOPE CONSTRAINTS (GL-08):
+  - Gauge TVD: 8040 ft | GL Valve TVD: 3860 ft | Tubing ID: 2.441 in
+  - Drainage Area: 620 acres | Material-Balance dPr/dt: -0.060 psi/day | Pr0: 3191.8 psia
+  - Real SCADA Choke Envelope: [27.9%, 50.4%] | Downstream Manifold/Separator Envelope: [171.2, 209.3] psia
+  - Pb: 1384 psia | Bo: 1.189 | mu_o: 0.919 cp | Rs@Pb: 336.2
+
+FEW-SHOT HISTORICAL SEPARATOR TESTS (8 shots for GL-08):
+  Shot 1: date=2025-01-24 | choke=37.5% | Pdh=2643.8 | Tdh=189.00F | WHP=290.5 | Pds=178.1 | Pann=1287.8 | Qgl=549.6 -> Qo=1593.2, Qw=328.0, Qg=534.1
+  Shot 2: date=2025-02-21 | choke=37.5% | Pdh=2660.6 | Tdh=188.92F | WHP=279.4 | Pds=177.4 | Pann=1231.7 | Qgl=470.9 -> Qo=1559.0, Qw=350.5, Qg=505.1
+  Shot 3: date=2025-03-24 | choke=32.8% | Pdh=2695.8 | Tdh=188.77F | WHP=323.0 | Pds=174.1 | Pann=1262.2 | Qgl=471.5 -> Qo=1465.4, Qw=355.9, Qg=483.7
+  Shot 4: date=2025-04-24 | choke=32.8% | Pdh=2688.3 | Tdh=188.76F | WHP=318.9 | Pds=171.6 | Pann=1255.5 | Qgl=470.0 -> Qo=1433.8, Qw=365.5, Qg=453.3
+  Shot 5: date=2025-05-24 | choke=37.5% | Pdh=2655.2 | Tdh=188.82F | WHP=278.2 | Pds=176.0 | Pann=1224.4 | Qgl=470.4 -> Qo=1472.7, Qw=417.9, Qg=514.6
+  Shot 6: date=2025-06-24 | choke=37.5% | Pdh=2655.7 | Tdh=188.77F | WHP=274.0 | Pds=175.5 | Pann=1220.2 | Qgl=470.0 -> Qo=1451.9, Qw=382.5, Qg=468.9
+  Shot 7: date=2025-07-24 | choke=37.5% | Pdh=2660.9 | Tdh=188.72F | WHP=272.6 | Pds=176.1 | Pann=1218.1 | Qgl=467.6 -> Qo=1352.1, Qw=446.2, Qg=483.5
+  Shot 8: date=2025-09-24 | choke=43.8% | Pdh=2625.7 | Tdh=188.73F | WHP=237.2 | Pds=176.7 | Pann=1202.7 | Qgl=490.2 -> Qo=1479.7, Qw=464.0, Qg=479.5
+
+TASK: Generate 180 physics-gated steady-state rows for GL-08 spanning its real choke envelope [27.9%, 50.4%] and BOTH test-separator & production-manifold backpressures [171.2, 209.3] psia.
+
+================================================================================
+FEW-SHOT SYNTHETIC DATA PROMPT — WELL GL-09 (SCADA ENVELOPE + MATERIAL BALANCE)
+================================================================================
+STATIC COMPLETION, PVT & ENVELOPE CONSTRAINTS (GL-09):
+  - Gauge TVD: 8030 ft | GL Valve TVD: 4010 ft | Tubing ID: 2.992 in
+  - Drainage Area: 390 acres | Material-Balance dPr/dt: -0.058 psi/day | Pr0: 3203.6 psia
+  - Real SCADA Choke Envelope: [25.2%, 43.1%] | Downstream Manifold/Separator Envelope: [167.6, 206.0] psia
+  - Pb: 1177 psia | Bo: 1.092 | mu_o: 3.008 cp | Rs@Pb: 160.0
+
+FEW-SHOT HISTORICAL SEPARATOR TESTS (9 shots for GL-09):
+  Shot 1: date=2025-01-26 | choke=32.8% | Pdh=2654.1 | Tdh=189.06F | WHP=325.1 | Pds=168.5 | Pann=1110.8 | Qgl=847.7 -> Qo=1346.4, Qw=295.4, Qg=219.4
+  Shot 2: date=2025-02-24 | choke=32.8% | Pdh=2659.6 | Tdh=189.03F | WHP=343.1 | Pds=170.4 | Pann=1136.1 | Qgl=977.9 -> Qo=1300.6, Qw=321.7, Qg=202.0
+  Shot 3: date=2025-03-27 | choke=32.8% | Pdh=2652.3 | Tdh=189.04F | WHP=349.1 | Pds=169.5 | Pann=1145.8 | Qgl=1036.6 -> Qo=1249.8, Qw=317.9, Qg=225.3
+  Shot 4: date=2025-04-27 | choke=37.5% | Pdh=2612.4 | Tdh=189.15F | WHP=301.4 | Pds=174.9 | Pann=1109.2 | Qgl=1038.5 -> Qo=1319.0, Qw=385.0, Qg=223.8
+  Shot 5: date=2025-05-28 | choke=37.5% | Pdh=2609.8 | Tdh=189.14F | WHP=299.0 | Pds=174.8 | Pann=1103.5 | Qgl=1021.4 -> Qo=1360.3, Qw=377.2, Qg=207.5
+  Shot 6: date=2025-06-27 | choke=34.4% | Pdh=2647.0 | Tdh=189.01F | WHP=327.2 | Pds=172.7 | Pann=1127.0 | Qgl=1016.5 -> Qo=1204.6, Qw=377.2, Qg=162.3
+  Shot 7: date=2025-07-27 | choke=34.4% | Pdh=2644.2 | Tdh=189.00F | WHP=325.9 | Pds=171.7 | Pann=1124.7 | Qgl=1010.8 -> Qo=1259.6, Qw=381.3, Qg=203.7
+  Shot 8: date=2025-08-27 | choke=34.4% | Pdh=2655.2 | Tdh=188.95F | WHP=326.0 | Pds=172.9 | Pann=1126.7 | Qgl=1008.4 -> Qo=1231.0, Qw=413.0, Qg=220.1
+  Shot 9: date=2025-09-27 | choke=29.7% | Pdh=2719.5 | Tdh=188.73F | WHP=383.2 | Pds=166.2 | Pann=1174.6 | Qgl=1012.5 -> Qo=1070.3, Qw=386.1, Qg=175.2
+
+TASK: Generate 180 physics-gated steady-state rows for GL-09 spanning its real choke envelope [25.2%, 43.1%] and BOTH test-separator & production-manifold backpressures [167.6, 206.0] psia.
+
+================================================================================
+FEW-SHOT SYNTHETIC DATA PROMPT — WELL GL-10 (SCADA ENVELOPE + MATERIAL BALANCE)
+================================================================================
+STATIC COMPLETION, PVT & ENVELOPE CONSTRAINTS (GL-10):
+  - Gauge TVD: 9850 ft | GL Valve TVD: 2960 ft | Tubing ID: 2.992 in
+  - Drainage Area: 100 acres | Material-Balance dPr/dt: -0.294 psi/day | Pr0: 3976.8 psia
+  - Real SCADA Choke Envelope: [30.5%, 48.5%] | Downstream Manifold/Separator Envelope: [157.2, 195.2] psia
+  - Pb: 1586 psia | Bo: 1.130 | mu_o: 2.134 cp | Rs@Pb: 230.0
+
+FEW-SHOT HISTORICAL SEPARATOR TESTS (7 shots for GL-10):
+  Shot 1: date=2025-01-29 | choke=42.2% | Pdh=3662.7 | Tdh=195.51F | WHP=325.6 | Pds=164.1 | Pann=1110.6 | Qgl=1007.9 -> Qo=2277.9, Qw=645.1, Qg=485.5
+  Shot 2: date=2025-02-28 | choke=42.2% | Pdh=3665.6 | Tdh=195.47F | WHP=321.9 | Pds=163.0 | Pann=1103.3 | Qgl=999.0 -> Qo=2212.5, Qw=702.4, Qg=518.9
+  Shot 3: date=2025-03-30 | choke=39.1% | Pdh=3666.9 | Tdh=195.43F | WHP=348.4 | Pds=161.4 | Pann=1105.5 | Qgl=963.0 -> Qo=2097.9, Qw=631.5, Qg=470.2
+  Shot 4: date=2025-04-30 | choke=39.1% | Pdh=3669.9 | Tdh=195.38F | WHP=342.5 | Pds=160.5 | Pann=1099.4 | Qgl=969.2 -> Qo=2049.6, Qw=668.2, Qg=446.3
+  Shot 5: date=2025-06-30 | choke=35.9% | Pdh=3674.8 | Tdh=195.30F | WHP=374.2 | Pds=156.0 | Pann=1124.3 | Qgl=1020.6 -> Qo=1777.5, Qw=607.2, Qg=433.0
+  Shot 6: date=2025-07-31 | choke=35.9% | Pdh=3671.2 | Tdh=195.27F | WHP=367.2 | Pds=154.8 | Pann=1116.0 | Qgl=1022.3 -> Qo=1676.2, Qw=638.5, Qg=387.3
+  Shot 7: date=2025-08-31 | choke=35.9% | Pdh=3664.2 | Tdh=195.25F | WHP=363.6 | Pds=154.9 | Pann=1106.4 | Qgl=1013.9 -> Qo=1603.1, Qw=609.7, Qg=369.7
+
+TASK: Generate 180 physics-gated steady-state rows for GL-10 spanning its real choke envelope [30.5%, 48.5%] and BOTH test-separator & production-manifold backpressures [157.2, 195.2] psia.

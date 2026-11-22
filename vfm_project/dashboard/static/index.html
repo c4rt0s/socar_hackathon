@@ -1,0 +1,2863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOCAR Well Analytics Workbench — VFM &amp; PTA</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="/static/axis_zoom.js?v=20261122d"></script>
+  <style>
+    :root {
+      --bg: #f5f8fa;
+      --surface: #ffffff;
+      --surface-alt: #f8fafc;
+      --border: #d8e1e8;
+      --border-strong: #bfccd6;
+      --text: #182026;
+      --muted: #5c7080;
+      --accent: #2d72d2;
+      --accent-soft: #ebf1f5;
+      --green: #0f9960;
+      --green-bg: #e6f7f0;
+      --amber: #bf7326;
+      --amber-bg: #fff6e6;
+      --red: #db3737;
+      --red-bg: #fdecec;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; }
+    .app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* Clean Minimal Foundry Top Bar */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 10px 18px; background: #182026; color: #f5f8fa;
+      border-bottom: 1px solid #10161a; position: sticky; top: 0; z-index: 30;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-dot { width: 10px; height: 10px; border-radius: 3px; background: #2d72d2; box-shadow: 0 0 0 3px rgba(45,114,210,0.3); }
+    .topbar-title { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: 0.01em; color: #ffffff; }
+    .hdr-pill { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,0.12); color: #d8e1e8; font-family: var(--mono); }
+    .hdr-pill.ready { background: rgba(15,153,96,0.22); color: #7ae1b6; }
+    .topbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .hdr-btn {
+      border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.08);
+      color: #f5f8fa; border-radius: 5px; padding: 6px 11px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: background 0.12s;
+    }
+    .hdr-btn:hover:not(:disabled) { background: rgba(255,255,255,0.18); }
+    .hdr-btn.primary { background: #2d72d2; border-color: #2d72d2; color: #ffffff; }
+    .hdr-btn.primary:hover:not(:disabled) { background: #215db0; }
+    .hdr-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .startup-banner {
+      background: var(--amber-bg); color: var(--amber); border-bottom: 1px solid #f0d19e;
+      padding: 8px 18px; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+    }
+    .startup-banner.hidden { display: none; }
+    .startup-banner.error { background: var(--red-bg); color: var(--red); border-color: #f3bcbc; }
+
+    /* Workspace Layout */
+    .workspace { display: grid; grid-template-columns: 225px minmax(0, 1fr); flex: 1; min-height: 0; }
+    @media (max-width: 960px) { .workspace { grid-template-columns: 1fr; } }
+
+    .sidebar {
+      background: var(--surface); border-right: 1px solid var(--border);
+      padding: 14px 12px; display: flex; flex-direction: column; gap: 14px;
+    }
+    .sidebar-hdr { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 6px 4px; }
+    .wells-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .wells-table th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); padding: 4px 6px 6px; border-bottom: 1px solid var(--border); }
+    .wells-table td { padding: 7px 6px; border-bottom: 1px solid #edf2f7; cursor: pointer; }
+    .wells-table tr:hover td { background: #f5f8fa; }
+    .wells-table tr.active td { background: #e8f1fc; font-weight: 700; color: #184a90; }
+
+    /* Main Area & 4-Tab Bar */
+    .main { display: flex; flex-direction: column; min-width: 0; }
+    .tab-bar {
+      display: flex; align-items: center; gap: 4px; padding: 0 18px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      border: none; border-bottom: 2.5px solid transparent; background: transparent;
+      padding: 12px 16px; font-size: 13px; font-weight: 600; color: var(--muted);
+      cursor: pointer; white-space: nowrap; transition: color 0.12s, border-color 0.12s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panels { padding: 16px 20px 28px; flex: 1; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: flex; flex-direction: column; gap: 14px; }
+
+    /* Shared Clean Components */
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      padding: 14px 16px; box-shadow: 0 1px 2px rgba(16,22,26,0.03);
+    }
+    .card-hdr { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .card-title { margin: 0; font-size: 14px; font-weight: 700; color: #10161a; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .small-muted { font-size: 11.5px; color: var(--muted); }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    @media (max-width: 1080px) { .grid-2 { grid-template-columns: 1fr; } .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+    .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+    .kpi-lbl { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .kpi-val { font-size: 20px; font-weight: 700; font-family: var(--mono); color: #10161a; font-variant-numeric: tabular-nums; }
+    .kpi-sub { font-size: 11.5px; color: var(--muted); }
+
+    button.btn, select.ctrl {
+      border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
+      border-radius: 5px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    button.btn:hover { background: var(--surface-alt); }
+    button.btn.primary { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+    button.btn.primary:hover { background: #215db0; }
+    button.btn.success { background: var(--green); border-color: var(--green); color: #ffffff; }
+
+    .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 5px; overflow: hidden; background: var(--surface-alt); }
+    .seg button { border: none; background: transparent; padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; }
+    .seg button + button { border-left: 1px solid var(--border); }
+    .seg button.active { background: var(--accent); color: #ffffff; }
+
+    .chip { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 700; font-family: var(--mono); background: #edf2f7; color: #394b59; }
+    .chip.green { background: var(--green-bg); color: var(--green); }
+    .chip.blue { background: #e8f1fc; color: #184a90; }
+    .chip.amber { background: var(--amber-bg); color: var(--amber); }
+
+    .table-wrap { width: 100%; overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .data-table th, .data-table td { padding: 7px 10px; border-bottom: 1px solid #edf2f7; text-align: left; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .data-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); background: var(--surface-alt); font-weight: 700; }
+    .data-table th.num, .data-table td.num { text-align: right; font-family: var(--mono); }
+    .data-table tr.highlight td { background: #f0fdf4; font-weight: 600; }
+
+    /* Upload Dropzone */
+    .upload-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+    .upload-slot {
+      border: 1.5px dashed var(--border-strong); border-radius: 6px; padding: 12px;
+      background: var(--surface-alt); display: flex; flex-direction: column; gap: 6px;
+    }
+    .upload-slot.loaded { border-style: solid; border-color: var(--green); background: var(--green-bg); }
+    .upload-slot label { font-weight: 700; font-size: 12px; color: #10161a; }
+    .upload-slot input[type=file] { font-size: 11.5px; width: 100%; }
+
+    .interp-card { background: var(--surface-alt); border: 1px solid var(--border); border-left: 3.5px solid var(--accent); border-radius: 5px; padding: 10px 12px; }
+    .interp-card h4 { margin: 0 0 4px; font-size: 12.5px; color: #184a90; }
+    .interp-card p { margin: 0; font-size: 12.5px; color: #394b59; line-height: 1.45; }
+
+    .busy-overlay { position: fixed; inset: 0; background: rgba(16,22,26,0.35); display: none; align-items: center; justify-content: center; z-index: 90; }
+    .busy-overlay.show { display: flex; }
+    .busy-box { background: #fff; padding: 16px 22px; border-radius: 8px; display: flex; align-items: center; gap: 12px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+    .spinner { width: 18px; height: 18px; border: 3px solid #d8e1e8; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast-wrap { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 100; max-width: 380px; }
+    .toast { background: #182026; color: #fff; padding: 10px 14px; border-radius: 6px; font-size: 12.5px; box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
+    .toast.success { border-left: 4px solid var(--green); }
+    .toast.error { border-left: 4px solid var(--red); }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="brand-dot"></span>
+      <h1 class="topbar-title">SOCAR Well Analytics Workbench</h1>
+      <span id="hdr-status-pill" class="hdr-pill">Connecting...</span>
+    </div>
+    <div class="topbar-right">
+      <button id="hdr-dl-vfm" type="button" class="hdr-btn" disabled>Export VFM (.xlsx)</button>
+      <button id="hdr-dl-pta" type="button" class="hdr-btn" disabled>Export PTA (.xlsx)</button>
+      <button id="hdr-dl-rep" type="button" class="hdr-btn primary" disabled>Engineering Report (.html)</button>
+    </div>
+  </header>
+
+  <div id="startup-banner" class="startup-banner">
+    <span id="startup-status-text">Loading baseline field data, trained VFM models, and automated PTA...</span>
+  </div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-hdr">Field Wells</div>
+        <table class="wells-table">
+          <thead>
+            <tr>
+              <th>Well</th>
+              <th style="text-align:right">Tests</th>
+              <th>PTA</th>
+            </tr>
+          </thead>
+          <tbody id="sidebar-wells-body"></tbody>
+        </table>
+      </div>
+      <div class="card" style="padding:10px 12px; background:#f8fafc;">
+        <div class="sidebar-hdr" style="margin:0 0 6px;">Active Models</div>
+        <div style="font-size:11.5px; color:#394b59; display:flex; flex-direction:column; gap:5px;">
+          <div><strong>VFM:</strong> <span id="sb-active-vfm" class="chip green">synth_stacked_v2</span></div>
+          <div><strong>PTA:</strong> <span class="chip blue">Hybrid Horner ∩ Bourdet</span></div>
+          <div class="small-muted" id="sb-active-note">Data-driven physics-guided VFM + PTA.</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <nav id="tab-bar" class="tab-bar"></nav>
+      <div id="tab-panels" class="tab-panels"></div>
+    </main>
+  </div>
+</div>
+
+<div id="busy-overlay" class="busy-overlay">
+  <div class="busy-box"><div class="spinner"></div><span id="busy-msg">Running analysis...</span></div>
+</div>
+<div id="toast-wrap" class="toast-wrap"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  const listeners = {};
+  const tabs = [];
+  let activeTabId = null;
+  let modelsData = null;
+  let busyCount = 0;
+
+  const state = {
+    overview: null,
+    currentWell: null,
+    currentEvent: null,
+    activeModel: 'synth_stacked_v2'
+  };
+
+  function emit(evt, data) {
+    (listeners[evt] || []).slice().forEach(fn => { try { fn(data); } catch (e) { console.error(e); } });
+  }
+  function on(evt, fn) {
+    if (!listeners[evt]) listeners[evt] = [];
+    listeners[evt].push(fn);
+  }
+  async function api(path) {
+    const res = await fetch(path, { cache: 'no-store' });
+    const txt = await res.text();
+    let json = null;
+    try { json = txt ? JSON.parse(txt) : null; } catch (_) {}
+    if (!res.ok) throw new Error((json && json.error) || txt || ('HTTP ' + res.status));
+    return json;
+  }
+  async function post(path, body, msg) {
+    busy(true, msg || 'Working...');
+    try {
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body || {})
+      });
+      const txt = await res.text();
+      let json = null;
+      try { json = txt ? JSON.parse(txt) : null; } catch (_) {}
+      if (!res.ok) throw new Error((json && json.error) || txt || ('HTTP ' + res.status));
+      return json;
+    } catch (err) {
+      toast(err.message || String(err), 'error');
+      throw err;
+    } finally {
+      busy(false);
+    }
+  }
+  function fmt(v, d = 1) {
+    if (v === null || v === undefined || v === '' || typeof v === 'boolean') return '\u2014';
+    const n = Number(v);
+    return Number.isFinite(n) ? n.toFixed(d) : '\u2014';
+  }
+  function esc(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function toast(msg, lvl = 'info') {
+    const wrap = document.getElementById('toast-wrap');
+    if (!wrap) return;
+    const el = document.createElement('div');
+    el.className = 'toast ' + lvl;
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, lvl === 'error' ? 6000 : 3800);
+  }
+  function busy(flag, msg) {
+    const ov = document.getElementById('busy-overlay');
+    const m = document.getElementById('busy-msg');
+    if (flag) { busyCount++; if (m) m.textContent = msg || 'Working...'; ov.classList.add('show'); }
+    else { busyCount = Math.max(0, busyCount - 1); if (busyCount === 0) ov.classList.remove('show'); }
+  }
+  function chart(canvas, cfg) {
+    if (!canvas) return null;
+    const prev = Chart.getChart(canvas);
+    if (prev) prev.destroy();
+    const c = Object.assign({}, cfg);
+    c.options = Object.assign({ responsive: true, maintainAspectRatio: false, animation: false }, cfg.options || {});
+    return new Chart(canvas.getContext('2d'), c);
+  }
+  function registerTab(def) {
+    const idx = tabs.findIndex(t => t.def.id === def.id);
+    if (idx >= 0) tabs.splice(idx, 1);
+    tabs.push({ def, container: null, rendered: false });
+    tabs.sort((a, b) => (a.def.order || 99) - (b.def.order || 99));
+    renderTabBar();
+  }
+  function renderTabBar() {
+    const bar = document.getElementById('tab-bar');
+    if (!bar) return;
+    bar.innerHTML = tabs.map(t =>
+      '<button type="button" class="tab-btn' + (t.def.id === activeTabId ? ' active' : '') + '" data-tab="' + esc(t.def.id) + '">' + esc(t.def.title) + '</button>'
+    ).join('');
+    bar.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => activateTab(b.getAttribute('data-tab'))));
+  }
+  function activateTab(id) {
+    const entry = tabs.find(t => t.def.id === id);
+    if (!entry) return;
+    activeTabId = id;
+    const host = document.getElementById('tab-panels');
+    if (!entry.rendered) {
+      const div = document.createElement('div');
+      div.className = 'tab-panel';
+      div.setAttribute('data-tab-panel', id);
+      host.appendChild(div);
+      entry.container = div;
+      entry.rendered = true;
+      entry.def.render(div);
+    }
+    tabs.forEach(t => { if (t.container) t.container.classList.toggle('active', t.def.id === id); });
+    renderTabBar();
+    if (entry.def.onShow) entry.def.onShow();
+  }
+
+  window.WB = {
+    api, post, fmt, esc, toast, busy, state, on, emit, registerTab, chart,
+    palette: ['#0f9960', '#2d72d2', '#d9822b', '#db3737', '#634dbf', '#137cbd'],
+    phaseUnit: p => p === 'gas' ? 'Mscf/d' : 'STB/d'
+  };
+
+  function renderSidebar() {
+    const ov = state.overview;
+    if (!ov) return;
+    const wells = ov.wells || [];
+    const evList = ov.events || [];
+    const nTests = wells.reduce((a, w) => a + (Number(w.n_tests) || 0), 0);
+    const sbNote = document.getElementById('sb-active-note');
+    if (sbNote) sbNote.textContent = wells.length + ' wells · ' + nTests + ' separator tests · ' + evList.length + ' PBUs.';
+    const evByWell = {};
+    evList.forEach(e => { evByWell[e.well_name] = e; });
+    const tbody = document.getElementById('sidebar-wells-body');
+    tbody.innerHTML = (ov.wells || []).map(w => {
+      const ev = evByWell[w.well_name];
+      let chip = '<span class="small-muted">&mdash;</span>';
+      if (ev && ev.hybrid_confidence_rating) {
+        const cls = ev.hybrid_confidence_rating === 'HIGH' ? 'green' : 'blue';
+        chip = '<span class="chip ' + cls + '" title="Hybrid IARF Confidence ' + fmt(ev.hybrid_confidence_score, 0) + '/100">IARF ' + fmt(ev.hybrid_confidence_score, 0) + '</span>';
+      }
+      return '<tr class="' + (w.well_name === state.currentWell ? 'active' : '') + '" data-well="' + esc(w.well_name) + '">' +
+        '<td>' + esc(w.well_name) + '</td>' +
+        '<td style="text-align:right;font-family:var(--mono)">' + esc(w.n_tests) + '</td>' +
+        '<td>' + chip + '</td>' +
+      '</tr>';
+    }).join('');
+    tbody.querySelectorAll('tr[data-well]').forEach(tr => {
+      tr.addEventListener('click', () => {
+        const w = tr.getAttribute('data-well');
+        if (w && w !== state.currentWell) {
+          state.currentWell = w;
+          renderSidebar();
+          tabs.forEach(t => { if (t.rendered && t.def.onWellChange) t.def.onWellChange(w); });
+          emit('well', w);
+        }
+      });
+    });
+  }
+
+  // =========================================================================
+  // TAB 1: DATA UPLOAD & RUN TRAINED MODEL (MVP Requirement #1 + Judge Demo)
+  // =========================================================================
+  (function registerUploadTab() {
+    let root = null;
+    const uploaded = {};
+    let lastRun = null;
+
+    function readB64(file) {
+      return new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve({ name: file.name, content_b64: String(fr.result || '') });
+        fr.onerror = () => reject(new Error('Failed reading ' + file.name));
+        fr.readAsDataURL(file);
+      });
+    }
+
+    function downloadText(text, filename, mime) {
+      const blob = new Blob([text], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+    }
+
+    function buildSkeleton(el) {
+      const slots = [
+        { key: 'bundle', label: '0. Quick Bundle (.zip / Multi-CSV)', hint: 'Drop a .zip or multiple CSV/Excel files (auto-detected by columns)', multi: true, accept: '.zip,.csv,.xlsx,.xls,.parquet' },
+        { key: 'high_freq', label: '1. High-Freq Telemetry (Required)', hint: 'high_freq_data.csv (1-min SCADA)', accept: '.csv,.xlsx,.xls,.zip,.parquet' },
+        { key: 'choke_events', label: '2. Choke Events (Recommended)', hint: 'choke_events.csv (shut-in detection)', accept: '.csv,.xlsx,.xls' },
+        { key: 'well_completion', label: '3. Well Completion (Optional)', hint: 'Defaults to loaded field specs if omitted', accept: '.csv,.xlsx,.xls' },
+        { key: 'reservoir_pvt', label: '4. Reservoir PVT (Optional)', hint: 'Defaults to loaded PVT table if omitted', accept: '.csv,.xlsx,.xls' },
+        { key: 'well_tests', label: '5. Well Tests (Optional — Auto-Calibrates Unseen Wells)', hint: 'well_tests.csv for anchor calibration & QC', accept: '.csv,.xlsx,.xls' }
+      ];
+      el.innerHTML =
+        '<div class="card">' +
+          '<div class="card-hdr">' +
+            '<div><h3 class="card-title">Upload Raw Well Data &amp; Run Trained Models</h3>' +
+            '<div class="small-muted">Drop raw CSV/Excel/.zip files below to run our pre-trained <code>vfm_stacked_v2.pkl</code> VFM model (with automatic unseen-well calibration) and 3-Logic Hybrid + Stehfest Automated PTA.</div></div>' +
+            '<div class="toolbar">' +
+              '<button type="button" id="up-run-btn" class="btn primary">Run Trained Model &amp; PTA</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="upload-grid">' +
+            slots.map(s =>
+              '<div class="upload-slot" id="up-slot-' + s.key + '">' +
+                '<label>' + esc(s.label) + '</label>' +
+                '<div class="small-muted">' + esc(s.hint) + '</div>' +
+                '<input type="file" data-upkey="' + s.key + '"' + (s.multi ? ' multiple' : '') + ' accept="' + s.accept + '">' +
+                '<div class="small-muted" id="up-name-' + s.key + '">No file selected</div>' +
+              '</div>'
+            ).join('') +
+          '</div>' +
+        '</div>' +
+        '<div id="up-results" style="display:none; flex-direction:column; gap:14px;">' +
+          '<div class="grid-4" id="up-kpis"></div>' +
+          '<div id="up-notes-box" class="card" style="display:none; padding:10px 14px; font-size:12px;"></div>' +
+          '<div class="card">' +
+            '<div class="card-hdr"><h3 class="card-title">Predicted VFM Daily Rates (Preview)</h3>' +
+              '<div class="toolbar"><button type="button" id="up-dl-vfm" class="btn success">Download Uploaded VFM .csv</button></div>' +
+            '</div>' +
+            '<div class="table-wrap" style="max-height:260px; overflow:auto;"><table class="data-table">' +
+              '<thead><tr><th>Date</th><th>Well</th><th class="num">Oil (STB/d)</th><th class="num">Water (STB/d)</th><th class="num">Gas (Mscf/d)</th></tr></thead>' +
+              '<tbody id="up-vfm-body"></tbody>' +
+            '</table></div>' +
+          '</div>' +
+          '<div class="card">' +
+            '<div class="card-hdr"><h3 class="card-title">Detected Shut-Ins &amp; Automated Hybrid PTA Results</h3>' +
+              '<div class="toolbar"><button type="button" id="up-dl-pta" class="btn success">Download Uploaded PTA .csv</button></div>' +
+            '</div>' +
+            '<div class="table-wrap"><table class="data-table">' +
+              '<thead><tr><th>Well</th><th>Shut-in Start</th><th class="num">Dur (hr)</th><th class="num">m (psi/cyc)</th><th class="num">k (mD)</th><th class="num">Skin</th><th class="num">ΔP Skin</th><th>IARF Window</th><th>Confidence</th></tr></thead>' +
+              '<tbody id="up-pta-body"></tbody>' +
+            '</table></div>' +
+          '</div>' +
+          '<div class="card" id="up-clean-card" style="display:none;">' +
+            '<div class="card-hdr"><h3 class="card-title">Automated Data-Cleaning Audit Log</h3></div>' +
+            '<div class="table-wrap" style="max-height:180px; overflow:auto;"><table class="data-table">' +
+              '<thead><tr><th>Table</th><th>Action / Issue</th><th class="num">Rows</th><th>Detail</th></tr></thead>' +
+              '<tbody id="up-clean-body"></tbody>' +
+            '</table></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="card-hdr"><h3 class="card-title">Active Pre-Loaded Field Dataset</h3><span class="chip green">Ready in All Tabs</span></div>' +
+          '<div class="grid-4">' +
+            '<div class="kpi-card"><span class="kpi-lbl">Wells &amp; Period</span><span class="kpi-val" id="up-ov-wells">—</span><span class="kpi-sub" id="up-ov-period">Loading dataset summary...</span></div>' +
+            '<div class="kpi-card"><span class="kpi-lbl">Active VFM Model</span><span class="kpi-val" id="up-ov-vfm">—</span><span class="kpi-sub" id="up-ov-vfm-sub">Loaded from trained .pkl</span></div>' +
+            '<div class="kpi-card"><span class="kpi-lbl">Automated Hybrid PTA</span><span class="kpi-val" id="up-ov-pta">—</span><span class="kpi-sub" id="up-ov-pta-sub">Horner ∩ Bourdet + 9-Method Suite</span></div>' +
+            '<div class="kpi-card"><span class="kpi-lbl">Quick Navigation</span><div style="display:flex; gap:6px; margin-top:4px; flex-wrap:wrap;"><button type="button" class="btn" id="up-go-mon">Monitoring</button><button type="button" class="btn" id="up-go-vfm">VFM</button><button type="button" class="btn" id="up-go-pta">PTA</button></div></div>' +
+          '</div>' +
+        '</div>';
+
+      el.querySelectorAll('input[data-upkey]').forEach(inp => {
+        inp.addEventListener('change', async e => {
+          const k = inp.getAttribute('data-upkey');
+          const files = Array.from(e.target.files || []);
+          if (!files.length) return;
+          if (k === 'bundle') {
+            const arr = [];
+            for (const f of files) arr.push(await readB64(f));
+            uploaded.bundle = arr;
+            el.querySelector('#up-slot-' + k).classList.add('loaded');
+            el.querySelector('#up-name-' + k).textContent = 'Loaded ' + files.length + ' file(s): ' + files.map(f => f.name).join(', ');
+          } else {
+            const f = files[0];
+            uploaded[k] = await readB64(f);
+            el.querySelector('#up-slot-' + k).classList.add('loaded');
+            el.querySelector('#up-name-' + k).textContent = 'Loaded: ' + f.name + ' (' + Math.round(f.size / 1024) + ' KB)';
+          }
+        });
+      });
+
+      el.querySelector('#up-go-mon').addEventListener('click', () => activateTab('monitoring'));
+      el.querySelector('#up-go-vfm').addEventListener('click', () => activateTab('vfm'));
+      el.querySelector('#up-go-pta').addEventListener('click', () => activateTab('pta'));
+
+      el.querySelector('#up-run-btn').addEventListener('click', async () => {
+        if (!uploaded.high_freq && !(uploaded.bundle && uploaded.bundle.length)) {
+          toast('Please select at least high_freq_data.csv or a .zip bundle first.', 'error');
+          return;
+        }
+        try {
+          const res = await post('/api/upload_and_run', { files: uploaded }, 'Running trained vfm_stacked_v2.pkl & Hybrid Automated PTA...');
+          lastRun = res;
+          renderUploadedResults(res);
+          toast('Inference complete: ' + res.n_daily_rows + ' daily VFM rows, ' + res.n_pta_events + ' PTA events.', 'success');
+        } catch (_) {}
+      });
+
+      el.querySelector('#up-dl-vfm').addEventListener('click', () => {
+        if (lastRun && lastRun.vfm_csv) downloadText(lastRun.vfm_csv, 'uploaded_vfm_predictions.csv', 'text/csv');
+      });
+      el.querySelector('#up-dl-pta').addEventListener('click', () => {
+        if (lastRun && lastRun.pta_csv) downloadText(lastRun.pta_csv, 'uploaded_pta_results.csv', 'text/csv');
+      });
+    }
+
+    function renderUploadedResults(res) {
+      if (!root || !res) return;
+      root.querySelector('#up-results').style.display = 'flex';
+      root.querySelector('#up-kpis').innerHTML =
+        '<div class="kpi-card"><span class="kpi-lbl">Model Executed</span><span class="kpi-val" style="font-size:14px;">vfm_stacked_v2.pkl</span><span class="kpi-sub">' + esc(res.n_raw_rows.toLocaleString()) + ' raw rows ingested</span></div>' +
+        '<div class="kpi-card"><span class="kpi-lbl">Uploaded Wells</span><span class="kpi-val">' + esc(res.wells.length) + '</span><span class="kpi-sub">' + esc(res.wells.join(', ')) + '</span></div>' +
+        '<div class="kpi-card"><span class="kpi-lbl">VFM Daily Output</span><span class="kpi-val">' + esc(res.n_daily_rows) + ' rows</span><span class="kpi-sub">' + esc(res.date_range[0]) + ' → ' + esc(res.date_range[1]) + '</span></div>' +
+        '<div class="kpi-card"><span class="kpi-lbl">PTA Shut-Ins Analyzed</span><span class="kpi-val">' + esc(res.n_pta_events) + '</span><span class="kpi-sub">3-Logic Hybrid Intersection</span></div>';
+
+      root.querySelector('#up-vfm-body').innerHTML = (res.vfm_preview || []).map(r =>
+        '<tr><td>' + esc(r.date) + '</td><td><strong>' + esc(r.well_name) + '</strong></td>' +
+        '<td class="num">' + fmt(r.oil_rate_stbd, 1) + '</td><td class="num">' + fmt(r.water_rate_stbd, 1) + '</td><td class="num">' + fmt(r.gas_rate_mscfd, 1) + '</td></tr>'
+      ).join('') || '<tr><td colspan="5" class="small-muted">No daily rows generated.</td></tr>';
+
+      const allNotes = [].concat(res.ingest_notes || [], res.calibration_notes || []);
+      const nBox = root.querySelector('#up-notes-box');
+      if (nBox) {
+        if (allNotes.length) {
+          nBox.style.display = 'block';
+          nBox.innerHTML = '<strong>Ingestion &amp; Calibration Summary:</strong><ul style="margin:6px 0 0 18px; padding:0;">' +
+            allNotes.map(n => '<li>' + esc(n) + '</li>').join('') + '</ul>';
+        } else {
+          nBox.style.display = 'none';
+        }
+      }
+
+      const clCard = root.querySelector('#up-clean-card');
+      const clBody = root.querySelector('#up-clean-body');
+      const clogs = res.cleaning_log || [];
+      if (clCard && clBody) {
+        if (clogs.length) {
+          clCard.style.display = 'block';
+          clBody.innerHTML = clogs.map(c =>
+            '<tr><td>' + esc(c.table) + '</td><td>' + esc(c.issue) + '</td><td class="num">' + esc(c.rows_affected) + '</td><td>' + esc(c.detail || '') + '</td></tr>'
+          ).join('');
+        } else {
+          clCard.style.display = 'none';
+        }
+      }
+
+      root.querySelector('#up-pta-body').innerHTML = (res.pta_results || []).map(p =>
+        '<tr><td><strong>' + esc(p.well_name) + '</strong></td><td>' + esc(p.shut_in_time) + '</td>' +
+        '<td class="num">' + fmt(p.duration_hr, 1) + '</td><td class="num">' + fmt(p.horner_slope, 2) + '</td>' +
+        '<td class="num"><strong>' + fmt(p.permeability_md, 2) + '</strong></td><td class="num">' + fmt(p.skin, 3) + '</td>' +
+        '<td class="num">' + fmt(p.delta_p_skin_psi, 1) + '</td><td>[' + fmt(p.intersect_win_hr[0], 2) + '–' + fmt(p.intersect_win_hr[1], 2) + ' h]</td>' +
+        '<td><span class="chip ' + (p.confidence_rating === 'HIGH' ? 'green' : 'blue') + '">' + esc(p.confidence_rating) + ' (' + fmt(p.confidence_score, 0) + ')</span></td></tr>'
+      ).join('') || '<tr><td colspan="9" class="small-muted">No shut-in build-up events (&ge; 2 hr) detected in uploaded file.</td></tr>';
+    }
+
+    function refreshOverviewCards() {
+      if (!root || !state.overview) return;
+      const ov = state.overview;
+      const wells = ov.wells || [];
+      const nWells = wells.length;
+      const nTests = wells.reduce((a, w) => a + (Number(w.n_tests) || 0), 0);
+      const nPbus = (ov.events || []).length;
+      const wNames = wells.map(w => w.well_name);
+      const spanTxt = wNames.length ? (wNames[0] + '..' + wNames[wNames.length - 1]) : '—';
+      const pSpan = (ov.period && ov.period.length === 2)
+        ? (' · ' + String(ov.period[0]).slice(0, 10) + ' to ' + String(ov.period[1]).slice(0, 10))
+        : '';
+      const setT = (id, v) => { const el = root.querySelector('#' + id); if (el) el.textContent = v; };
+      setT('up-ov-wells', nWells + ' Wells');
+      setT('up-ov-period', spanTxt + pSpan + ' · ' + nTests + ' tests');
+      setT('up-ov-vfm', state.activeModel || 'synth_stacked_v2');
+      const mEntry = modelsData && modelsData.benchmark_summary
+        ? (modelsData.benchmark_summary.find(r => r.model === (state.activeModel || 'synth_stacked_v2')) || null)
+        : null;
+      const oilMape = mEntry ? (mEntry.oil_mape != null ? mEntry.oil_mape : mEntry.oil_rate_stbd_mape) : null;
+      setT('up-ov-vfm-sub', oilMape != null
+        ? ('CV Oil MAPE: ' + Number(oilMape).toFixed(2) + '% · trained .pkl ready')
+        : 'Loaded from trained .pkl bundle');
+      setT('up-ov-pta', nPbus + ' PBUs');
+      setT('up-ov-pta-sub', 'Horner ∩ Bourdet + 9-Method Deconvolution Suite');
+      const sbNote = document.getElementById('sb-active-note');
+      if (sbNote) sbNote.textContent = nWells + ' wells · ' + nTests + ' separator tests · ' + nPbus + ' PBUs.';
+    }
+
+    registerTab({
+      id: 'upload',
+      title: 'Data Upload & Run',
+      order: 1,
+      render(c) { root = c; buildSkeleton(c); refreshOverviewCards(); },
+      onShow() { refreshOverviewCards(); }
+    });
+  })();
+
+  // =========================================================================
+  // TAB 3: VFM PREDICTIONS  &  TAB 5: MODEL PERFORMANCE (Synced Closure)
+  // =========================================================================
+  (function registerVFMTab() {
+    let root = null;
+    let perfRoot = null;
+    let phase = 'oil';
+    let selectedModel = 'synth_stacked_v2';
+    let lastData = null;
+    let vfmChartInst = null;
+    let vfmZoomHandle = null;
+    let vfmPlotMode = 'box';
+    let pollTimer = null;
+    let vfmDiagCache = {}; // method -> payload
+    let corrMethod = 'pearson';
+    let corrScope = 'all_inputs';
+    let shapPhase = 'oil';
+    let shapLevel = 'end_to_end_sensors';
+    let auditFilter = 'all';
+    let shapBarChart = null;
+    let shapBeeChart = null;
+    let corrHitGeo = null;
+    let selectedTrainFeats = new Set();
+    let trainFeatsInitialized = false;
+    let customModelType = 'lgbm';
+    let customTrainResult = null;
+    let customShapChart = null;
+
+    const MODEL_LABELS = {
+      custom_selected: '★ Custom Selected-Feature Model (Live Retrained)',
+      synth_stacked_v2: '★ Synth Stacked V2 (7-Sensor Grey-Box + Physics-Gated Synth)',
+      synth_gbm_ensemble: 'Synth Monotonic GBM Ensemble (LightGBM + HistGBM)',
+      physics_wls: 'Physics WLS Baseline (IPR + Choke + VLP)',
+      hybrid_physics_gbm: 'Hybrid Physics × GBM Correction',
+      physics_choke: 'Physics Choke Only',
+      physics_ipr: 'Physics IPR Only',
+      physics_vlp: 'Physics VLP Only',
+      ridge: 'Pooled Ridge Regression',
+      gbm: 'Pooled GBM (No Synthetic Data)',
+      rf: 'Pooled Random Forest',
+      knn: 'Pooled K-Nearest Neighbours',
+      deconvolution: 'Pressure-Rate Deconvolution',
+      test_linear: 'Linear Interpolation Between Tests',
+      test_step: 'Step Carry-Forward From Last Test'
+    };
+
+    function getModelOptions() {
+      const statusMap = {};
+      if (modelsData && modelsData.models) {
+        modelsData.models.forEach(m => { statusMap[m.name] = m.status || 'not computed'; });
+      }
+      const ordered = Object.keys(MODEL_LABELS).filter(id => id !== 'custom_selected' || Boolean(statusMap.custom_selected));
+      if (modelsData && modelsData.models) {
+        modelsData.models.forEach(m => { if (ordered.indexOf(m.name) < 0) ordered.push(m.name); });
+      }
+      return ordered.map(id => {
+        const st = statusMap[id] || 'not computed';
+        const isReady = st.indexOf('ready') === 0;
+        const suffix = isReady ? '' : (st === 'running' ? ' [computing...]' : ' [compute on select]');
+        return { id, label: (MODEL_LABELS[id] || id) + suffix, status: st, ready: isReady };
+      });
+    }
+
+    function refreshModelDropdown() {
+      if (!root) return;
+      const sel = root.querySelector('#vfm-model-sel');
+      if (!sel) return;
+      const opts = getModelOptions();
+      sel.innerHTML = opts.map(o => '<option value="' + esc(o.id) + '">' + esc(o.label) + '</option>').join('');
+      sel.value = selectedModel;
+    }
+
+    function setComputeNotice(msg, isErr) {
+      if (!root) return;
+      const el = root.querySelector('#vfm-compute-notice');
+      if (!el) return;
+      if (!msg) { el.style.display = 'none'; return; }
+      el.style.display = 'flex';
+      el.style.background = isErr ? '#fdecec' : '#fff6e6';
+      el.style.borderColor = isErr ? '#f3bcbc' : '#f0d19e';
+      el.style.color = isErr ? '#db3737' : '#a66321';
+      el.innerHTML = (isErr ? '' : '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div> ') + '<span>' + esc(msg) + '</span>';
+    }
+
+    async function selectAndActivateModel(modelId) {
+      selectedModel = modelId;
+      state.activeModel = modelId;
+      const sb = document.getElementById('sb-active-vfm');
+      if (sb) sb.textContent = modelId;
+      if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+      refreshModelDropdown();
+
+      try {
+        const res = await fetch('/api/models/active', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: modelId })
+        });
+        const mPayload = await res.json();
+        if (!res.ok) throw new Error(mPayload.error || ('HTTP ' + res.status));
+        modelsData = mPayload;
+        refreshModelDropdown();
+        const entry = (mPayload.models || []).find(m => m.name === modelId);
+        const st = entry ? (entry.status || '') : '';
+        if (st.indexOf('ready') === 0) {
+          setComputeNotice(null);
+          emit('activeModel', modelId);
+          await loadVFM();
+          return;
+        }
+        if (st.indexOf('error') === 0) {
+          setComputeNotice('Model ' + modelId + ' failed: ' + st, true);
+          return;
+        }
+        // Computing in background thread -> poll cleanly until ready!
+        setComputeNotice('Computing ' + modelId + ' across all wells (saved to disk cache for instant reuse)...');
+        emit('activeModel', modelId);
+        pollModelReady(modelId);
+      } catch (err) {
+        setComputeNotice('Failed to activate ' + modelId + ': ' + err.message, true);
+        toast(err.message, 'error');
+      }
+    }
+
+    async function pollModelReady(modelId) {
+      if (selectedModel !== modelId) return;
+      try {
+        const mPayload = await api('/api/models');
+        modelsData = mPayload;
+        refreshModelDropdown();
+        const entry = (mPayload.models || []).find(m => m.name === modelId);
+        const st = entry ? (entry.status || '') : '';
+        if (st.indexOf('ready') === 0) {
+          setComputeNotice(null);
+          toast(modelId + ' computed and cached (' + st + ').', 'success');
+          emit('activeModel', modelId);
+          await loadVFM();
+          return;
+        }
+        if (st.indexOf('error') === 0) {
+          setComputeNotice('Error computing ' + modelId + ': ' + st, true);
+          return;
+        }
+        pollTimer = setTimeout(() => pollModelReady(modelId), 1200);
+      } catch (_) {
+        pollTimer = setTimeout(() => pollModelReady(modelId), 1800);
+      }
+    }
+
+    function buildSkeleton(el) {
+      el.innerHTML =
+        '<div class="card" style="padding:10px 14px;">' +
+          '<div class="toolbar" style="justify-content:space-between;">' +
+            '<div class="toolbar">' +
+              '<label style="font-weight:700;">VFM Model:</label>' +
+              '<select id="vfm-model-sel" class="ctrl" style="min-width:340px;"></select>' +
+              '<div class="seg" id="vfm-phase-seg">' +
+                '<button type="button" data-ph="oil" class="active">Oil</button>' +
+                '<button type="button" data-ph="water">Water</button>' +
+                '<button type="button" data-ph="gas">Gas</button>' +
+                '<button type="button" data-ph="liquid">Liquid</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="toolbar">' +
+              '<button type="button" id="vfm-dl-xlsx" class="btn primary">Download VFM .xlsx</button>' +
+              '<button type="button" id="vfm-dl-csv" class="btn">Download .csv</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div id="vfm-compute-notice" style="display:none; align-items:center; gap:10px; padding:10px 14px; border:1px solid #f0d19e; border-radius:6px; font-size:12.5px; font-weight:600;"></div>' +
+        '<div class="grid-4">' +
+          '<div class="kpi-card"><span class="kpi-lbl">Avg Daily Rate</span><span id="vfm-kpi-avg" class="kpi-val">&mdash;</span><span id="vfm-kpi-avg-sub" class="kpi-sub">&mdash;</span></div>' +
+          '<div class="kpi-card"><span class="kpi-lbl">Cumulative Production</span><span id="vfm-kpi-cum" class="kpi-val">&mdash;</span><span id="vfm-kpi-cum-sub" class="kpi-sub">Full monitoring period total</span></div>' +
+          '<div class="kpi-card"><span class="kpi-lbl">Mean Water Cut</span><span id="vfm-kpi-wc" class="kpi-val">&mdash;</span><span class="kpi-sub">From predicted Oil &amp; Water</span></div>' +
+          '<div class="kpi-card"><span class="kpi-lbl">Mean Formation GOR</span><span id="vfm-kpi-gor" class="kpi-val">&mdash;</span><span class="kpi-sub">Formation gas / oil ratio</span></div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="card-hdr">' +
+            '<h3 class="card-title" id="vfm-chart-title">Daily VFM Production Forecast</h3>' +
+            '<div class="toolbar">' +
+              '<div class="seg" id="vfm-pmode-seg">' +
+                '<button type="button" data-vpmode="box" class="active">⬚ Box Zoom</button>' +
+                '<button type="button" data-vpmode="pan">✋ Pan</button>' +
+              '</div>' +
+              '<button type="button" id="vfm-reset-zoom" class="btn">Reset Axes</button>' +
+            '</div>' +
+          '</div>' +
+          '<div style="height:360px; position:relative;"><canvas id="vfm-main-chart"></canvas></div>' +
+          '<div class="small-muted" style="margin-top:6px;">Drag axis middle = Shift · Scroll on axis (or drag ends) = Rescale · Drag plot = Box Zoom / Pan · Double-click = Reset</div>' +
+        '</div>';
+
+      refreshModelDropdown();
+      vfmZoomHandle = window.AxisZoom.attach(el.querySelector('#vfm-main-chart'), () => vfmChartInst, {
+        xScaleId: 'x', yLeftScaleId: 'y', wheelPlotMode: 'x', boxZoomMode: 'x',
+        getPlotMode: () => vfmPlotMode
+      });
+      el.querySelectorAll('#vfm-pmode-seg button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          vfmPlotMode = btn.getAttribute('data-vpmode');
+          el.querySelectorAll('#vfm-pmode-seg button').forEach(b => b.classList.toggle('active', b === btn));
+        });
+      });
+      el.querySelector('#vfm-reset-zoom').addEventListener('click', () => { if (lastData) renderVFMChart(lastData); });
+
+      el.querySelector('#vfm-model-sel').addEventListener('change', e => {
+        selectAndActivateModel(e.target.value);
+      });
+      el.querySelectorAll('#vfm-phase-seg button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          phase = btn.getAttribute('data-ph');
+          el.querySelectorAll('#vfm-phase-seg button').forEach(b => b.classList.toggle('active', b === btn));
+          if (lastData) renderVFMChart(lastData);
+        });
+      });
+      el.querySelector('#vfm-dl-xlsx').addEventListener('click', () => {
+        window.location.href = '/api/export/vfm?model=' + encodeURIComponent(selectedModel) + '&rate_type=alloc&format=xlsx';
+      });
+      el.querySelector('#vfm-dl-csv').addEventListener('click', () => {
+        window.location.href = '/api/export/vfm?model=' + encodeURIComponent(selectedModel) + '&rate_type=alloc&format=csv';
+      });
+    }
+
+    function buildPerfSkeleton(el) {
+      el.innerHTML =
+        '<div class="card">' +
+          '<div class="card-hdr"><h3 class="card-title">Model Accuracy Benchmark Summary (Out-of-Sample CV · 85 Separator Well Tests)</h3><span class="small-muted">Click any model row to compute &amp; activate it across VFM &amp; Field Monitoring</span></div>' +
+          '<div class="table-wrap"><table class="data-table">' +
+            '<thead><tr><th>Model</th><th>Family</th><th>Status</th><th class="num">Oil MAE</th><th class="num">Oil MAPE</th><th class="num">Water MAPE</th><th class="num">Gas MAPE</th><th class="num">Liquid MAPE</th></tr></thead>' +
+            '<tbody id="vfm-bench-body"></tbody>' +
+          '</table></div>' +
+        '</div>' +
+        '<div class="card" id="vfm-shap-card">' +
+          '<div class="card-hdr">' +
+            '<div>' +
+              '<h3 class="card-title">SHAP Feature Importance &amp; Beeswarm Evaluation (Trained V2 Stacked VFM)</h3>' +
+              '<span id="vfm-shap-sub" class="small-muted">Loading exact Shapley values from trained V2 Stacked VFM...</span>' +
+            '</div>' +
+            '<div class="toolbar">' +
+              '<div class="seg" id="vfm-shap-ph-seg">' +
+                '<button type="button" data-sph="oil" class="active">Oil</button>' +
+                '<button type="button" data-sph="water">Water</button>' +
+                '<button type="button" data-sph="gas">Gas</button>' +
+              '</div>' +
+              '<select id="vfm-shap-lvl-sel" class="ctrl">' +
+                '<option value="end_to_end_sensors">End-to-End Physical Sensors (Exact 2⁸ Shapley)</option>' +
+                '<option value="stacked_v2_features">V2 Stacked Super-Learner (21 Training Features)</option>' +
+                '<option value="lgbm_treeshap">Monotonic LightGBM Exact TreeSHAP (21 Features)</option>' +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+          '<div id="vfm-shap-meta" class="small-muted" style="margin-bottom:8px; padding:6px 10px; background:#f8fafc; border-radius:4px; border:1px solid #e1e8ed;"></div>' +
+          '<div class="grid-2">' +
+            '<div>' +
+              '<div class="small-muted" style="font-weight:700; margin-bottom:4px;">Mean |SHAP| Impact (Red = Positive · Blue = Negative · Gray = Mixed)</div>' +
+              '<div style="height:320px; position:relative;"><canvas id="vfm-shap-bar-canvas"></canvas></div>' +
+            '</div>' +
+            '<div>' +
+              '<div class="small-muted" style="font-weight:700; margin-bottom:4px;">SHAP Beeswarm Distribution (Dot Color: Blue = Low Feature Value → Red = High Value)</div>' +
+              '<div style="height:320px; position:relative;"><canvas id="vfm-shap-bee-canvas"></canvas></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card" id="vfm-corr-card">' +
+          '<div class="card-hdr">' +
+            '<div>' +
+              '<h3 class="card-title">VFM Input Correlation Matrix</h3>' +
+              '<span id="vfm-corr-sub" class="small-muted">Hover any cell for exact correlation &amp; V2 training status (green dot = Direct V2 ML input)</span>' +
+            '</div>' +
+            '<div class="toolbar">' +
+              '<div class="seg" id="vfm-corr-scope-seg">' +
+                '<button type="button" data-cscope="all_inputs" class="active">All Inputs + PVT + Targets</button>' +
+                '<button type="button" data-cscope="v2_training">V2 Training Features (21)</button>' +
+              '</div>' +
+              '<div class="seg" id="vfm-corr-meth-seg">' +
+                '<button type="button" data-cmeth="pearson" class="active">Pearson r</button>' +
+                '<button type="button" data-cmeth="spearman">Spearman ρ</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="position:relative; overflow-x:auto; padding-bottom:6px;">' +
+            '<canvas id="vfm-corr-canvas" style="display:block; margin:0 auto; cursor:crosshair;"></canvas>' +
+            '<div id="vfm-corr-tip" style="display:none; position:absolute; pointer-events:none; background:rgba(16,22,26,0.94); color:#fff; padding:6px 10px; border-radius:5px; font-size:11.5px; line-height:1.45; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:20; white-space:nowrap;"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card" id="vfm-audit-card">' +
+          '<div class="card-hdr">' +
+            '<div>' +
+              '<h3 class="card-title">VFM Training Feature Audit &amp; Custom Parameter Selection</h3>' +
+              '<span class="small-muted">Check or uncheck ANY parameters below to specify exactly which features train a custom live VFM model and compare accuracy &amp; SHAP</span>' +
+            '</div>' +
+            '<div class="seg" id="vfm-audit-flt-seg">' +
+              '<button type="button" data-aflt="all" class="active">All Inputs</button>' +
+              '<button type="button" data-aflt="v2_ml">Direct V2 ML</button>' +
+              '<button type="button" data-aflt="physics">Physics Engine / Anchor</button>' +
+              '<button type="button" data-aflt="pta_only">PTA / Material Balance Only</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="toolbar" style="justify-content:space-between; padding:10px 12px; margin-bottom:8px; background:#f8fafc; border:1px solid #d8e1e8; border-radius:6px; gap:8px; flex-wrap:wrap;">' +
+            '<div class="toolbar" style="gap:6px; flex-wrap:wrap;">' +
+              '<span class="small-muted" style="font-weight:700;">Presets:</span>' +
+              '<button type="button" class="btn" data-tpreset="v2_core">V2 Core + Diffs</button>' +
+              '<button type="button" class="btn" data-tpreset="scada7">Raw 7 SCADA</button>' +
+              '<button type="button" class="btn" data-tpreset="scada_pvt">SCADA + PVT/Completion</button>' +
+              '<button type="button" class="btn" data-tpreset="all">All</button>' +
+              '<button type="button" class="btn" data-tpreset="none">Clear</button>' +
+            '</div>' +
+            '<div class="toolbar" style="gap:8px; flex-wrap:wrap;">' +
+              '<span id="vfm-train-cnt" class="chip blue">0 selected</span>' +
+              '<select id="vfm-custom-algo" class="ctrl">' +
+                '<option value="lgbm">LightGBM (Exact TreeSHAP)</option>' +
+                '<option value="rf">Random Forest</option>' +
+                '<option value="gbr">Gradient Boosting (GBR)</option>' +
+                '<option value="ridge">Ridge Linear (Exact LinearSHAP)</option>' +
+              '</select>' +
+              '<button type="button" id="vfm-retrain-btn" class="btn primary">▶ Train on Selected Parameters</button>' +
+              '<button type="button" id="vfm-revert-btn" class="btn" style="display:none;">Revert to Stacked V2</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="toolbar" style="justify-content:space-between; padding:9px 12px; margin-bottom:10px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; gap:8px; flex-wrap:wrap;">' +
+            '<div class="toolbar" style="gap:8px; flex-wrap:wrap;">' +
+              '<span style="font-weight:700; font-size:12px; color:#14532d;">Automated Preset Grid Search (5-Fold Stratified CV):</span>' +
+              '<select id="vfm-grid-scope" class="ctrl">' +
+                '<option value="all">All 4 Algorithms × All Presets (~40 combos)</option>' +
+                '<option value="selected">Selected Algorithm × All Presets (~10 combos)</option>' +
+              '</select>' +
+              '<select id="vfm-grid-metric" class="ctrl">' +
+                '<option value="composite">Optimize: Composite MAPE (Oil + Water + Gas)</option>' +
+                '<option value="oil">Optimize: Oil MAPE</option>' +
+                '<option value="water">Optimize: Water MAPE</option>' +
+                '<option value="gas">Optimize: Gas MAPE</option>' +
+                '<option value="liquid">Optimize: Liquid MAPE</option>' +
+              '</select>' +
+            '</div>' +
+            '<button type="button" id="vfm-grid-search-btn" class="btn" style="background:#0f766e; color:#fff; border-color:#0f766e; font-weight:700;">⚡ Grid Search Best Preset</button>' +
+          '</div>' +
+          '<div id="vfm-grid-result" style="display:none; margin-bottom:12px; padding:12px; border:1px solid #99f6e4; border-left:4px solid #0d9488; border-radius:6px; background:#f0fdfa;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">' +
+              '<div id="vfm-grid-banner" style="font-weight:700; font-size:13px; color:#134e4a;"></div>' +
+              '<span id="vfm-grid-meta" class="chip green">Winner Auto-Selected &amp; Applied</span>' +
+            '</div>' +
+            '<div class="table-wrap" style="max-height:270px; overflow-y:auto; background:#fff; border:1px solid #cbd5e1; border-radius:6px;">' +
+              '<table class="data-table">' +
+                '<thead><tr><th style="width:52px; text-align:center;">Rank</th><th>Feature Preset</th><th>Algorithm</th><th class="num"># Feats</th><th class="num">Composite MAPE</th><th class="num">Oil MAPE</th><th class="num">Water MAPE</th><th class="num">Gas MAPE</th><th class="num">Oil R²</th><th style="text-align:center; width:112px;">Action</th></tr></thead>' +
+                '<tbody id="vfm-grid-body"></tbody>' +
+              '</table>' +
+            '</div>' +
+          '</div>' +
+          '<div id="vfm-custom-result" style="display:none; margin-bottom:12px; padding:12px; border:1px solid #bfdbfe; border-left:4px solid #2d72d2; border-radius:6px; background:#f0f7ff;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">' +
+              '<div id="vfm-custom-res-title" style="font-weight:700; font-size:13px; color:#102a43;"></div>' +
+              '<span class="chip green">Live Forecast Activated on VFM Predictions Tab</span>' +
+            '</div>' +
+            '<div class="grid-4" id="vfm-custom-kpis" style="margin-bottom:10px;"></div>' +
+            '<div class="small-muted" style="font-weight:700; margin-bottom:4px;">Custom Model SHAP Importance — Selected Parameters Only (<span id="vfm-custom-shap-ph">OIL</span>)</div>' +
+            '<div style="height:210px; position:relative;"><canvas id="vfm-custom-shap-canvas"></canvas></div>' +
+          '</div>' +
+          '<div class="table-wrap"><table class="data-table">' +
+            '<thead><tr><th style="text-align:center; width:56px;">Train</th><th>Parameter</th><th>Group</th><th>Training Role / Tier</th><th style="text-align:center;">Direct V2 ML</th><th style="text-align:center;">Physics VFM</th><th class="num">r (Oil)</th><th class="num">r (Water)</th><th class="num">r (Gas)</th><th>Physical Mechanism in Model</th></tr></thead>' +
+            '<tbody id="vfm-audit-body"></tbody>' +
+          '</table></div>' +
+        '</div>';
+
+      // Model Performance controls (SHAP + Correlation Matrix + Feature Audit + Grid Search)
+      el.querySelectorAll('#vfm-shap-ph-seg button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          shapPhase = btn.getAttribute('data-sph');
+          el.querySelectorAll('#vfm-shap-ph-seg button').forEach(b => b.classList.toggle('active', b === btn));
+          if (vfmDiagCache[corrMethod]) renderVFMShap(vfmDiagCache[corrMethod]);
+          if (customTrainResult) renderCustomTrainResult(customTrainResult);
+        });
+      });
+      el.querySelector('#vfm-shap-lvl-sel').addEventListener('change', e => {
+        shapLevel = e.target.value;
+        if (vfmDiagCache[corrMethod]) renderVFMShap(vfmDiagCache[corrMethod]);
+      });
+      el.querySelectorAll('#vfm-corr-scope-seg button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          corrScope = btn.getAttribute('data-cscope');
+          el.querySelectorAll('#vfm-corr-scope-seg button').forEach(b => b.classList.toggle('active', b === btn));
+          if (vfmDiagCache[corrMethod]) renderVFMCorrHeatmap(vfmDiagCache[corrMethod]);
+        });
+      });
+      el.querySelectorAll('#vfm-corr-meth-seg button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          corrMethod = btn.getAttribute('data-cmeth');
+          el.querySelectorAll('#vfm-corr-meth-seg button').forEach(b => b.classList.toggle('active', b === btn));
+          loadVFMDiagnostics();
+        });
+      });
+      el.querySelectorAll('#vfm-audit-flt-seg button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          auditFilter = btn.getAttribute('data-aflt');
+          el.querySelectorAll('#vfm-audit-flt-seg button').forEach(b => b.classList.toggle('active', b === btn));
+          if (vfmDiagCache[corrMethod]) renderVFMAuditTable(vfmDiagCache[corrMethod]);
+        });
+      });
+
+      // Custom Parameter-Selection Presets & Retrain Controls
+      el.querySelectorAll('[data-tpreset]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const diag = vfmDiagCache[corrMethod];
+          if (!diag || !diag.feature_audit) return;
+          const p = btn.getAttribute('data-tpreset');
+          selectedTrainFeats.clear();
+          diag.feature_audit.forEach(r => {
+            if (p === 'all') selectedTrainFeats.add(r.key);
+            else if (p === 'v2_core' && (r.used_in_v2_ml || r.group === 'Raw SCADA')) selectedTrainFeats.add(r.key);
+            else if (p === 'scada7' && r.group === 'Raw SCADA') selectedTrainFeats.add(r.key);
+            else if (p === 'scada_pvt' && (r.group === 'Raw SCADA' || r.group === 'Static Completion' || r.group === 'Static PVT')) selectedTrainFeats.add(r.key);
+          });
+          trainFeatsInitialized = true;
+          renderVFMAuditTable(diag);
+        });
+      });
+      el.querySelector('#vfm-custom-algo').addEventListener('change', e => {
+        customModelType = e.target.value || 'lgbm';
+      });
+      el.querySelector('#vfm-retrain-btn').addEventListener('click', () => runCustomRetrain());
+      el.querySelector('#vfm-grid-search-btn').addEventListener('click', () => runGridSearchPresets());
+      el.querySelector('#vfm-revert-btn').addEventListener('click', () => {
+        selectAndActivateModel('synth_stacked_v2');
+      });
+
+      // Interactive hover tooltip on Correlation Matrix Canvas
+      const cCan = el.querySelector('#vfm-corr-canvas');
+      const cTip = el.querySelector('#vfm-corr-tip');
+      cCan.addEventListener('mousemove', ev => {
+        if (!corrHitGeo) { cTip.style.display = 'none'; return; }
+        const rect = cCan.getBoundingClientRect();
+        const mx = ev.clientX - rect.left;
+        const my = ev.clientY - rect.top;
+        const g = corrHitGeo;
+        const ci = Math.floor((mx - g.padL) / g.cell);
+        const ri = Math.floor((my - g.padT) / g.cell);
+        if (ci < 0 || ri < 0 || ci >= g.n || ri >= g.n) { cTip.style.display = 'none'; return; }
+        const colX = g.cols[ci], colY = g.cols[ri];
+        const rVal = g.mat[ri][ci];
+        cTip.innerHTML =
+          '<strong>' + esc(colY.label) + '</strong> × <strong>' + esc(colX.label) + '</strong><br>' +
+          (corrMethod === 'spearman' ? 'Spearman ρ' : 'Pearson r') + ': <strong style="color:' + (rVal >= 0 ? '#fca5a5' : '#93c5fd') + ';">' + (rVal >= 0 ? '+' : '') + rVal.toFixed(3) + '</strong><br>' +
+          '<span style="color:#cbd5e1;">' + esc(colY.label) + ': ' + (colY.used_in_v2 ? '✓ Direct V2 ML' : colY.group) + ' · ' + esc(colX.label) + ': ' + (colX.used_in_v2 ? '✓ Direct V2 ML' : colX.group) + '</span>';
+        cTip.style.display = 'block';
+        const tx = Math.min(mx + 14, cCan.offsetWidth - 240);
+        const ty = Math.max(my - 54, 4);
+        cTip.style.left = Math.max(4, tx) + 'px';
+        cTip.style.top = ty + 'px';
+      });
+      cCan.addEventListener('mouseleave', () => { cTip.style.display = 'none'; });
+    }
+
+    async function loadVFMDiagnostics() {
+      if (!perfRoot) return;
+      const subEl = perfRoot.querySelector('#vfm-shap-sub');
+      if (vfmDiagCache[corrMethod]) {
+        const d = vfmDiagCache[corrMethod];
+        renderVFMShap(d);
+        renderVFMCorrHeatmap(d);
+        renderVFMAuditTable(d);
+        return;
+      }
+      if (subEl) subEl.textContent = 'Computing exact Shapley values & ' + corrMethod + ' correlations...';
+      try {
+        const d = await api('/api/vfm/diagnostics?method=' + encodeURIComponent(corrMethod));
+        vfmDiagCache[corrMethod] = d;
+        renderVFMShap(d);
+        renderVFMCorrHeatmap(d);
+        renderVFMAuditTable(d);
+      } catch (err) {
+        if (subEl) subEl.textContent = 'Diagnostics error: ' + err.message;
+      }
+    }
+
+    function rdBuColor(v) {
+      // Smooth diverging Blue (-1) -> White (0) -> Crimson (+1)
+      const c = Math.max(-1, Math.min(1, v || 0));
+      if (c >= 0) {
+        const r = Math.round(255 - (255 - 198) * c);
+        const g = Math.round(255 - (255 - 40) * c);
+        const b = Math.round(255 - (255 - 40) * c);
+        return 'rgb(' + r + ',' + g + ',' + b + ')';
+      }
+      const t = -c;
+      const r = Math.round(255 - (255 - 30) * t);
+      const g = Math.round(255 - (255 - 98) * t);
+      const b = Math.round(255 - (255 - 190) * t);
+      return 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+
+    function shapValueColor(norm01) {
+      // Classic SHAP blue (#2563eb) -> magenta (#9333ea) -> crimson (#dc2626)
+      const t = Math.max(0, Math.min(1, norm01 || 0));
+      if (t < 0.5) {
+        const u = t * 2;
+        return 'rgb(' + Math.round(37 + (147 - 37) * u) + ',' + Math.round(99 + (51 - 99) * u) + ',' + Math.round(235 + (234 - 235) * u) + ')';
+      }
+      const u = (t - 0.5) * 2;
+      return 'rgb(' + Math.round(147 + (220 - 147) * u) + ',' + Math.round(51 + (38 - 51) * u) + ',' + Math.round(234 + (38 - 234) * u) + ')';
+    }
+
+    function renderVFMShap(diag) {
+      if (!perfRoot || !diag || !diag.shap || !diag.shap[shapPhase]) return;
+      const phBlock = diag.shap[shapPhase];
+      const block = phBlock[shapLevel] || phBlock.end_to_end_sensors;
+      if (!block) return;
+      const unit = block.unit || 'STB/d';
+      const mwTxt = Object.entries(phBlock.meta_weights || {})
+        .filter(([, w]) => w >= 0.005)
+        .map(([k, w]) => k + ': ' + (w * 100).toFixed(0) + '%')
+        .join(' · ');
+      const lvlTitles = {
+        end_to_end_sensors: 'Exact 2⁸ Coalition Shapley (Perturbing 7 SCADA Sensors + Time through Physics Engine → Stacked V2)',
+        stacked_v2_features: 'Full 5-Model Stacked Super-Learner Antithetic Shapley across 21 Training Features',
+        lgbm_treeshap: 'Exact Native LightGBM C++ TreeSHAP across 21 Training Features'
+      };
+      perfRoot.querySelector('#vfm-shap-sub').textContent = lvlTitles[shapLevel] || '';
+      perfRoot.querySelector('#vfm-shap-meta').innerHTML =
+        '<strong>Phase:</strong> ' + shapPhase.toUpperCase() + ' (' + esc(unit) + ') · ' +
+        '<strong>Real Separator Tests:</strong> ' + block.n_samples + ' · ' +
+        '<strong>Baseline E[f(x)]:</strong> ' + fmt(block.base_value, 1) + ' ' + esc(unit) + ' · ' +
+        '<strong>Exact Efficiency Error:</strong> ' + Number(block.max_efficiency_error || 0).toExponential(1) + ' · ' +
+        '<strong>Learned V2 Meta-Weights:</strong> ' + esc(mwTxt);
+
+      const feats = (block.features || []).slice(0, 12);
+      const labels = feats.map(f => f.label);
+      const vals = feats.map(f => f.mean_abs_shap);
+      const barColors = feats.map(f =>
+        f.direction === 'positive' ? 'rgba(220, 38, 38, 0.84)' :
+        (f.direction === 'negative' ? 'rgba(37, 99, 235, 0.84)' : 'rgba(100, 116, 139, 0.78)')
+      );
+
+      shapBarChart = chart(perfRoot.querySelector('#vfm-shap-bar-canvas'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Mean |SHAP| (' + unit + ')',
+            data: vals,
+            backgroundColor: barColors,
+            borderRadius: 3,
+            barPercentage: 0.72
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const f = feats[ctx.dataIndex];
+                  return 'Mean |SHAP|: ' + fmt(f.mean_abs_shap, 2) + ' ' + unit + ' (' + fmt(f.pct_share, 1) + '% share · dir r=' + (f.direction_corr >= 0 ? '+' : '') + fmt(f.direction_corr, 2) + ')';
+                }
+              }
+            }
+          },
+          scales: {
+            x: { beginAtZero: true, title: { display: true, text: 'Mean |SHAP Value| (' + unit + ')' }, grid: { color: '#edf2f7' } },
+            y: { ticks: { font: { size: 10.5 } }, grid: { display: false } }
+          }
+        }
+      });
+
+      // Right: Beeswarm Scatter Plot (top 12 features, Y index inverted so #1 is on top!)
+      const beePts = [];
+      const beeColors = [];
+      const nF = feats.length;
+      feats.forEach((f, idx) => {
+        const yCenter = nF - 1 - idx;
+        (f.beeswarm || []).forEach((pt, pi) => {
+          // Deterministic micro-jitter so overlapping dots spread cleanly like beeswarm
+          const jitter = (((pi * 37) % 11) / 10.0 - 0.5) * 0.42;
+          beePts.push({
+            x: pt.shap,
+            y: yCenter + jitter,
+            featLabel: f.label,
+            well: pt.well,
+            x_raw: pt.x_raw,
+            x_norm: pt.x_norm
+          });
+          beeColors.push(shapValueColor(pt.x_norm));
+        });
+      });
+
+      const zeroLinePlugin = {
+        id: 'shapZeroLine',
+        afterDatasetsDraw(ch) {
+          const xS = ch.scales.x, yS = ch.scales.y;
+          if (!xS || !yS) return;
+          const x0 = xS.getPixelForValue(0);
+          if (x0 < ch.chartArea.left || x0 > ch.chartArea.right) return;
+          const ctx = ch.ctx;
+          ctx.save();
+          ctx.strokeStyle = '#64748b';
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([4, 3]);
+          ctx.beginPath();
+          ctx.moveTo(x0, ch.chartArea.top);
+          ctx.lineTo(x0, ch.chartArea.bottom);
+          ctx.stroke();
+          ctx.restore();
+        }
+      };
+
+      shapBeeChart = chart(perfRoot.querySelector('#vfm-shap-bee-canvas'), {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'SHAP Sample Impact',
+            data: beePts,
+            backgroundColor: beeColors,
+            borderColor: 'rgba(15,23,42,0.22)',
+            borderWidth: 0.6,
+            pointRadius: 3.6,
+            pointHoverRadius: 5.5
+          }]
+        },
+        plugins: [zeroLinePlugin],
+        options: {
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const r = ctx.raw || {};
+                  return r.well + ' · ' + r.featLabel + ' = ' + fmt(r.x_raw, 2) + ' → SHAP: ' + (r.x >= 0 ? '+' : '') + fmt(r.x, 2) + ' ' + unit;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'SHAP Value — Impact on Prediction (' + unit + ')' }, grid: { color: '#edf2f7' } },
+            y: {
+              min: -0.6,
+              max: nF - 0.4,
+              ticks: {
+                stepSize: 1,
+                autoSkip: false,
+                font: { size: 10 },
+                callback: v => {
+                  const idx = nF - 1 - Math.round(v);
+                  return (idx >= 0 && idx < nF && Math.abs(v - Math.round(v)) < 0.01) ? labels[idx] : '';
+                }
+              },
+              grid: { color: '#f1f5f9' }
+            }
+          }
+        }
+      });
+    }
+
+    function renderVFMCorrHeatmap(diag) {
+      if (!perfRoot || !diag || !diag.correlations) return;
+      const cBlock = diag.correlations[corrScope] || diag.correlations.all_inputs;
+      if (!cBlock || !cBlock.columns || !cBlock.columns.length) return;
+      const cols = cBlock.columns;
+      const mat = cBlock.matrix;
+      const n = cols.length;
+
+      const cell = n > 20 ? 30 : 34;
+      const padL = 148, padT = 112, padR = 54, padB = 18;
+      const cssW = padL + n * cell + padR;
+      const cssH = padT + n * cell + padB;
+      const dpr = window.devicePixelRatio || 1;
+      const can = perfRoot.querySelector('#vfm-corr-canvas');
+      can.style.width = cssW + 'px';
+      can.style.height = cssH + 'px';
+      can.width = Math.round(cssW * dpr);
+      can.height = Math.round(cssH * dpr);
+      const ctx = can.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cssW, cssH);
+
+      corrHitGeo = { padL, padT, cell, n, cols, mat };
+
+      // Draw heatmap cells + numeric values
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = (cell >= 34 ? '600 9.5px ' : '600 8.5px ') + 'Consolas, monospace';
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          const val = mat[i][j];
+          const x = padL + j * cell;
+          const y = padT + i * cell;
+          ctx.fillStyle = rdBuColor(val);
+          ctx.fillRect(x, y, cell, cell);
+          ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+          ctx.lineWidth = 0.7;
+          ctx.strokeRect(x, y, cell, cell);
+          ctx.fillStyle = Math.abs(val) > 0.58 ? '#ffffff' : '#182026';
+          ctx.fillText(val.toFixed(2).replace('-0.00', '0.00'), x + cell / 2, y + cell / 2);
+        }
+      }
+
+      // Row labels (left) + green dot for Direct V2 ML features
+      ctx.font = '600 10.5px -apple-system, Segoe UI, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i < n; i++) {
+        const y = padT + i * cell + cell / 2;
+        ctx.fillStyle = cols[i].group === 'Target' ? '#0f9960' : '#182026';
+        ctx.fillText(cols[i].label, padL - 14, y);
+        if (cols[i].used_in_v2) {
+          ctx.fillStyle = '#0f9960';
+          ctx.beginPath();
+          ctx.arc(padL - 7, y, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Column labels (top, angled -45 deg)
+      ctx.textAlign = 'left';
+      for (let j = 0; j < n; j++) {
+        const x = padL + j * cell + cell / 2;
+        ctx.save();
+        ctx.translate(x, padT - 8);
+        ctx.rotate(-Math.PI / 4);
+        ctx.fillStyle = cols[j].group === 'Target' ? '#0f9960' : '#182026';
+        ctx.fillText(cols[j].label, 0, 0);
+        ctx.restore();
+      }
+
+      // Vertical colorbar legend on the right
+      const cbX = padL + n * cell + 14;
+      const cbY = padT;
+      const cbH = n * cell;
+      const cbW = 12;
+      for (let py = 0; py < cbH; py++) {
+        const v = 1.0 - 2.0 * (py / Math.max(cbH - 1, 1));
+        ctx.fillStyle = rdBuColor(v);
+        ctx.fillRect(cbX, cbY + py, cbW, 1.5);
+      }
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.strokeRect(cbX, cbY, cbW, cbH);
+      ctx.fillStyle = '#394b59';
+      ctx.font = '600 9.5px Consolas, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('+1.0', cbX + cbW + 4, cbY + 5);
+      ctx.fillText(' 0.0', cbX + cbW + 4, cbY + cbH / 2);
+      ctx.fillText('-1.0', cbX + cbW + 4, cbY + cbH - 4);
+    }
+
+    function updateTrainCountBadge() {
+      const cntEl = perfRoot && perfRoot.querySelector('#vfm-train-cnt');
+      if (cntEl) cntEl.textContent = selectedTrainFeats.size + ' selected';
+    }
+
+    async function runCustomRetrain() {
+      if (!selectedTrainFeats.size) {
+        toast('Select at least one parameter checkbox before training.', 'error');
+        return;
+      }
+      const btn = perfRoot && perfRoot.querySelector('#vfm-retrain-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Training...'; }
+      busy(true, 'Training custom ' + customModelType.toUpperCase() + ' VFM on ' + selectedTrainFeats.size + ' selected parameters...');
+      try {
+        const res = await post('/api/vfm/retrain_custom', {
+          features: Array.from(selectedTrainFeats),
+          model_type: customModelType,
+          activate: true
+        });
+        customTrainResult = res;
+        if (res.models_payload) modelsData = res.models_payload;
+        selectedModel = 'custom_selected';
+        state.activeModel = 'custom_selected';
+        const sb = document.getElementById('sb-active-vfm');
+        if (sb) sb.textContent = 'custom_selected (' + res.model_type + ')';
+        refreshModelDropdown();
+        renderBenchSummary();
+        renderCustomTrainResult(res);
+        emit('activeModel', 'custom_selected');
+        if (root) await loadVFM();
+        const revBtn = perfRoot && perfRoot.querySelector('#vfm-revert-btn');
+        if (revBtn) revBtn.style.display = '';
+        toast('Trained ' + res.model_type.toUpperCase() + ' on ' + res.n_features + ' parameters: Oil CV MAPE = ' + fmt(res.metrics.oil.mape, 2) + '% (R²=' + fmt(res.metrics.oil.r2, 4) + ')', 'success');
+      } catch (err) {
+        toast('Custom retrain failed: ' + err.message, 'error');
+      } finally {
+        busy(false);
+        if (btn) { btn.disabled = false; btn.textContent = '▶ Train on Selected Parameters'; }
+      }
+    }
+
+    async function runGridSearchPresets() {
+      const btn = perfRoot && perfRoot.querySelector('#vfm-grid-search-btn');
+      const scope = (perfRoot && perfRoot.querySelector('#vfm-grid-scope') && perfRoot.querySelector('#vfm-grid-scope').value) || 'all';
+      const optMetric = (perfRoot && perfRoot.querySelector('#vfm-grid-metric') && perfRoot.querySelector('#vfm-grid-metric').value) || 'composite';
+      const algos = scope === 'selected' ? [customModelType] : ['lgbm', 'rf', 'gbr', 'ridge'];
+      if (btn) { btn.disabled = true; btn.textContent = 'Running Grid Search...'; }
+      busy(true, 'Running 5-fold CV Grid Search across feature presets × ' + algos.length + ' algorithm(s)...');
+      try {
+        const res = await post('/api/vfm/grid_search', {
+          model_types: algos,
+          optimize_metric: optMetric,
+          current_features: Array.from(selectedTrainFeats),
+          activate: true
+        });
+        const best = res.best;
+        if (best) {
+          selectedTrainFeats.clear();
+          (best.features || []).forEach(f => selectedTrainFeats.add(f));
+          trainFeatsInitialized = true;
+          customModelType = best.model_type;
+          const algoSel = perfRoot && perfRoot.querySelector('#vfm-custom-algo');
+          if (algoSel) algoSel.value = best.model_type;
+          if (vfmDiagCache[corrMethod]) renderVFMAuditTable(vfmDiagCache[corrMethod]);
+        }
+        if (res.models_payload) modelsData = res.models_payload;
+        if (res.best_custom_result) {
+          customTrainResult = res.best_custom_result;
+          renderCustomTrainResult(res.best_custom_result);
+        }
+        renderGridSearchResult(res);
+        selectedModel = 'custom_selected';
+        state.activeModel = 'custom_selected';
+        const sb = document.getElementById('sb-active-vfm');
+        if (sb && best) sb.textContent = 'custom_selected (grid: ' + best.model_type + ')';
+        refreshModelDropdown();
+        renderBenchSummary();
+        emit('activeModel', 'custom_selected');
+        if (root) await loadVFM();
+        const revBtn = perfRoot && perfRoot.querySelector('#vfm-revert-btn');
+        if (revBtn) revBtn.style.display = '';
+        if (best) {
+          toast('Grid Search Winner: ' + best.preset_name + ' × ' + best.model_type.toUpperCase() + ' (Oil MAPE ' + fmt(best.oil_mape, 2) + '%, Composite ' + fmt(best.composite_mape, 2) + '%)', 'success');
+        }
+      } catch (err) {
+        toast('Grid Search failed: ' + err.message, 'error');
+      } finally {
+        busy(false);
+        if (btn) { btn.disabled = false; btn.textContent = '⚡ Grid Search Best Preset'; }
+      }
+    }
+
+    function renderGridSearchResult(res) {
+      if (!perfRoot || !res || !res.leaderboard) return;
+      const box = perfRoot.querySelector('#vfm-grid-result');
+      if (!box) return;
+      box.style.display = 'block';
+      const b = res.best;
+      const algoNames = { lgbm: 'LightGBM', rf: 'Random Forest', gbr: 'Gradient Boosting', ridge: 'Ridge Linear' };
+      const banner = perfRoot.querySelector('#vfm-grid-banner');
+      if (banner && b) {
+        banner.innerHTML =
+          '🏆 Best Preset: <u>' + esc(b.preset_name) + '</u> × <u>' + esc(algoNames[b.model_type] || b.model_type.toUpperCase()) + '</u> ' +
+          '(' + b.n_features + ' params) — Oil MAPE ' + fmt(b.oil_mape, 2) + '% · Water ' + fmt(b.water_mape, 2) + '% · Gas ' + fmt(b.gas_mape, 2) + '% · Composite ' + fmt(b.composite_mape, 2) + '%';
+      }
+      const meta = perfRoot.querySelector('#vfm-grid-meta');
+      if (meta) {
+        meta.textContent = res.n_combinations + ' combinations tested (' + res.cv_folds + '-fold CV · opt: ' + res.optimize_metric.toUpperCase() + ')';
+      }
+      const tbody = perfRoot.querySelector('#vfm-grid-body');
+      tbody.innerHTML = res.leaderboard.map((r, idx) => {
+        const isWin = idx === 0;
+        const rankBadge = isWin
+          ? '<span class="chip green" style="font-weight:700;">#1 🏆</span>'
+          : '<span class="chip" style="font-family:var(--mono);">#' + r.rank + '</span>';
+        return '<tr class="' + (isWin ? 'highlight' : '') + '">' +
+          '<td style="text-align:center;">' + rankBadge + '</td>' +
+          '<td><strong>' + esc(r.preset_name) + '</strong><br><span class="small-muted">' + esc(r.description) + '</span></td>' +
+          '<td><span class="chip blue">' + esc(algoNames[r.model_type] || r.model_type.toUpperCase()) + '</span></td>' +
+          '<td class="num">' + r.n_features + '</td>' +
+          '<td class="num"><strong>' + fmt(r.composite_mape, 2) + '%</strong></td>' +
+          '<td class="num">' + fmt(r.oil_mape, 2) + '%</td>' +
+          '<td class="num">' + fmt(r.water_mape, 2) + '%</td>' +
+          '<td class="num">' + fmt(r.gas_mape, 2) + '%</td>' +
+          '<td class="num">' + fmt(r.oil_r2, 4) + '</td>' +
+          '<td style="text-align:center;"><button type="button" class="btn vfm-grid-apply" data-gidx="' + idx + '" style="padding:4px 8px; font-size:11px;">' + (isWin ? 'Applied ✓' : 'Apply & Train') + '</button></td>' +
+        '</tr>';
+      }).join('');
+
+      tbody.querySelectorAll('.vfm-grid-apply').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const rec = res.leaderboard[Number(btn.getAttribute('data-gidx'))];
+          if (!rec) return;
+          selectedTrainFeats.clear();
+          (rec.features || []).forEach(f => selectedTrainFeats.add(f));
+          trainFeatsInitialized = true;
+          customModelType = rec.model_type;
+          const algoSel = perfRoot && perfRoot.querySelector('#vfm-custom-algo');
+          if (algoSel) algoSel.value = rec.model_type;
+          if (vfmDiagCache[corrMethod]) renderVFMAuditTable(vfmDiagCache[corrMethod]);
+          runCustomRetrain();
+        });
+      });
+    }
+
+    function renderCustomTrainResult(res) {
+      if (!perfRoot || !res) return;
+      const box = perfRoot.querySelector('#vfm-custom-result');
+      if (!box) return;
+      box.style.display = 'block';
+      const ph = (shapPhase === 'water' || shapPhase === 'gas') ? shapPhase : 'oil';
+      const titleEl = perfRoot.querySelector('#vfm-custom-res-title');
+      if (titleEl) {
+        titleEl.textContent = 'Custom ' + res.model_type.toUpperCase() + ' (' + res.n_features + ' selected parameters · ' + res.cv_folds + '-fold stratified CV on ' + res.n_tests + ' well tests)';
+      }
+      const phLbl = perfRoot.querySelector('#vfm-custom-shap-ph');
+      if (phLbl) phLbl.textContent = ph.toUpperCase();
+
+      const m = res.metrics || {};
+      const v2Bench = (modelsData && modelsData.benchmark_summary)
+        ? modelsData.benchmark_summary.find(r => r.model === 'synth_stacked_v2') : null;
+      const kpiCard = (lbl, obj, unit, baseMape) => {
+        const dTxt = (baseMape != null && obj)
+          ? (' · vs V2 (' + fmt(baseMape, 2) + '%): ' + ((obj.mape - baseMape) >= 0 ? '+' : '') + fmt(obj.mape - baseMape, 2) + '%')
+          : '';
+        return '<div class="kpi-card" style="padding:8px 10px; background:#fff;">' +
+          '<span class="kpi-lbl">' + esc(lbl) + '</span>' +
+          '<span class="kpi-val" style="font-size:17px;">' + fmt(obj && obj.mape, 2) + '% MAPE</span>' +
+          '<span class="kpi-sub">WAPE ' + fmt(obj && obj.wape, 2) + '% · R²=' + fmt(obj && obj.r2, 4) + ' · MAE ' + fmt(obj && obj.mae, 1) + ' ' + unit + esc(dTxt) + '</span>' +
+        '</div>';
+      };
+      perfRoot.querySelector('#vfm-custom-kpis').innerHTML =
+        kpiCard('Oil CV Accuracy', m.oil, 'STB/d', v2Bench && v2Bench.oil_mape) +
+        kpiCard('Water CV Accuracy', m.water, 'STB/d', v2Bench && v2Bench.water_mape) +
+        kpiCard('Gas CV Accuracy', m.gas, 'Mscf/d', v2Bench && v2Bench.gas_mape) +
+        kpiCard('Liquid CV Accuracy', m.liquid, 'STB/d', v2Bench && v2Bench.liquid_mape);
+
+      const sBlk = res.shap && res.shap[ph];
+      if (!sBlk || !sBlk.features) return;
+      const feats = sBlk.features.slice(0, 12);
+      const unit = sBlk.unit || 'STB/d';
+      customShapChart = chart(perfRoot.querySelector('#vfm-custom-shap-canvas'), {
+        type: 'bar',
+        data: {
+          labels: feats.map(f => f.label),
+          datasets: [{
+            label: 'Mean |SHAP| (' + unit + ')',
+            data: feats.map(f => f.mean_abs_shap),
+            backgroundColor: feats.map(f => f.direction === 'positive' ? 'rgba(220,38,38,0.84)' : (f.direction === 'negative' ? 'rgba(37,99,235,0.84)' : 'rgba(100,116,139,0.78)')),
+            borderRadius: 3,
+            barPercentage: 0.72
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const f = feats[ctx.dataIndex];
+                  return 'Mean |SHAP|: ' + fmt(f.mean_abs_shap, 2) + ' ' + unit + ' (' + fmt(f.pct_share, 1) + '% share)';
+                }
+              }
+            }
+          },
+          scales: {
+            x: { beginAtZero: true, title: { display: true, text: 'Mean |SHAP| (' + unit + ')' }, grid: { color: '#e2e8f0' } },
+            y: { ticks: { font: { size: 10.5 } }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderVFMAuditTable(diag) {
+      if (!perfRoot || !diag || !diag.feature_audit) return;
+      if (!trainFeatsInitialized) {
+        diag.feature_audit.forEach(r => {
+          if (r.used_in_v2_ml || r.group === 'Raw SCADA') selectedTrainFeats.add(r.key);
+        });
+        trainFeatsInitialized = true;
+      }
+      updateTrainCountBadge();
+      const rows = diag.feature_audit.filter(r => {
+        if (auditFilter === 'v2_ml') return r.used_in_v2_ml;
+        if (auditFilter === 'physics') return !r.used_in_v2_ml && r.used_in_physics_vfm;
+        if (auditFilter === 'pta_only') return !r.used_in_v2_ml && !r.used_in_physics_vfm;
+        return true;
+      });
+      const rBadge = v => {
+        if (v === null || v === undefined) return '<span class="small-muted">const</span>';
+        const cls = Math.abs(v) >= 0.5 ? (v > 0 ? 'red' : 'blue') : '';
+        return '<span class="chip ' + cls + '" style="font-family:var(--mono);">' + (v >= 0 ? '+' : '') + v.toFixed(2) + '</span>';
+      };
+      const tbody = perfRoot.querySelector('#vfm-audit-body');
+      tbody.innerHTML = rows.map(r => {
+        const tierCls = r.used_in_v2_ml ? 'green' : (r.used_in_physics_vfm ? 'blue' : 'amber');
+        const checked = selectedTrainFeats.has(r.key) ? ' checked' : '';
+        return '<tr class="' + (selectedTrainFeats.has(r.key) ? 'highlight' : '') + '">' +
+          '<td style="text-align:center;"><input type="checkbox" class="vfm-train-chk" data-fkey="' + esc(r.key) + '"' + checked + ' style="width:16px; height:16px; cursor:pointer; accent-color:#2d72d2;"></td>' +
+          '<td><strong>' + esc(r.label) + '</strong><br><span class="small-muted" style="font-family:var(--mono);">' + esc(r.key) + '</span></td>' +
+          '<td><span class="chip">' + esc(r.group) + '</span></td>' +
+          '<td><span class="chip ' + tierCls + '">' + esc(r.tier) + '</span></td>' +
+          '<td style="text-align:center;">' + (r.used_in_v2_ml ? '<span class="chip green">YES</span>' : '<span class="small-muted">via Prior</span>') + '</td>' +
+          '<td style="text-align:center;">' + (r.used_in_physics_vfm ? '<span class="chip blue">YES</span>' : '<span class="small-muted">No</span>') + '</td>' +
+          '<td class="num">' + rBadge(r.r_oil) + '</td>' +
+          '<td class="num">' + rBadge(r.r_water) + '</td>' +
+          '<td class="num">' + rBadge(r.r_gas) + '</td>' +
+          '<td style="font-size:11.5px; color:#394b59;">' + esc(r.role) + '</td>' +
+        '</tr>';
+      }).join('') || '<tr><td colspan="10" class="small-muted">No parameters match this filter.</td></tr>';
+
+      tbody.querySelectorAll('.vfm-train-chk').forEach(chk => {
+        chk.addEventListener('change', () => {
+          const fk = chk.getAttribute('data-fkey');
+          if (chk.checked) selectedTrainFeats.add(fk);
+          else selectedTrainFeats.delete(fk);
+          chk.closest('tr').classList.toggle('highlight', chk.checked);
+          updateTrainCountBadge();
+        });
+      });
+    }
+
+    async function loadVFM() {
+      if (!root || !state.currentWell) return;
+      refreshModelDropdown();
+      try {
+        const list = selectedModel === 'physics_wls' ? 'physics_wls' : (selectedModel + ',physics_wls');
+        const data = await api('/api/models/well?name=' + encodeURIComponent(state.currentWell) + '&models=' + encodeURIComponent(list));
+        lastData = data;
+        const mSel = (data.models && data.models[selectedModel]) || {};
+        if (!mSel.oil_alloc && selectedModel !== 'physics_wls') {
+          if (mSel.status === 'running') {
+            setComputeNotice('Computing ' + selectedModel + ' across all wells...');
+            if (!pollTimer) pollModelReady(selectedModel);
+          } else {
+            selectAndActivateModel(selectedModel);
+            return;
+          }
+        } else {
+          setComputeNotice(null);
+        }
+        renderVFMChart(data);
+        if (perfRoot) renderBenchSummary();
+      } catch (err) {
+        toast('VFM load error: ' + err.message, 'error');
+      }
+    }
+
+    function renderVFMChart(data) {
+      const dates = data.dates || [];
+      const mSel = (data.models && data.models[selectedModel]) || {};
+      const mBase = (data.models && data.models.physics_wls) || {};
+      const hasSel = Boolean(mSel[phase + '_alloc']);
+      const arr = hasSel ? mSel[phase + '_alloc'] : (mBase[phase + '_alloc'] || []);
+      const baseArr = mBase[phase + '_alloc'] || [];
+      const unit = phase === 'gas' ? 'Mscf/d' : 'STB/d';
+
+      const valid = arr.filter(v => v !== null && isFinite(v));
+      const meanVal = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : null;
+      const sumVal = valid.reduce((a, b) => a + b, 0);
+      const oilArr = hasSel ? (mSel.oil_alloc || []) : (mBase.oil_alloc || []);
+      const watArr = hasSel ? (mSel.water_alloc || []) : (mBase.water_alloc || []);
+      const gasArr = hasSel ? (mSel.gas_alloc || []) : (mBase.gas_alloc || []);
+      const totO = oilArr.reduce((a, b) => a + (b || 0), 0);
+      const totW = watArr.reduce((a, b) => a + (b || 0), 0);
+      const totG = gasArr.reduce((a, b) => a + (b || 0), 0);
+      const wc = (totO + totW) > 0 ? 100 * totW / (totO + totW) : null;
+      const gor = totO > 0 ? 1000 * totG / totO : null;
+
+      root.querySelector('#vfm-kpi-avg').textContent = fmt(meanVal, 1) + ' ' + unit;
+      root.querySelector('#vfm-kpi-avg-sub').textContent = state.currentWell + ' · ' + (hasSel ? selectedModel : 'computing ' + selectedModel + '...');
+      root.querySelector('#vfm-kpi-cum').textContent = sumVal >= 1e6 ? (sumVal / 1e6).toFixed(2) + 'M' : (sumVal / 1e3).toFixed(1) + 'k';
+      root.querySelector('#vfm-kpi-cum-sub').textContent = (phase === 'gas' ? 'Mscf' : 'STB') + ' cumulative (' + dates.length + ' days)';
+      root.querySelector('#vfm-kpi-wc').textContent = fmt(wc, 1) + '%';
+      root.querySelector('#vfm-kpi-gor').textContent = fmt(gor, 0) + ' scf/STB';
+
+      root.querySelector('#vfm-chart-title').textContent =
+        state.currentWell + ' — ' + phase.toUpperCase() + ' Rate (' + unit + ') · ' + selectedModel;
+
+      const dateMs = dates.map(d => Date.parse(d + 'T12:00:00Z'));
+      const datasets = [];
+      if (selectedModel !== 'physics_wls' && mBase[phase + '_alloc']) {
+        datasets.push({
+          label: 'Physics WLS Baseline',
+          data: dateMs.map((x, i) => ({ x, y: baseArr[i] })),
+          borderColor: '#8a9ba8',
+          borderDash: [5, 3],
+          borderWidth: 1.5,
+          pointRadius: 0
+        });
+      }
+      if (hasSel || selectedModel === 'physics_wls') {
+        datasets.push({
+          label: selectedModel + ' (Selected)',
+          data: dateMs.map((x, i) => ({ x, y: arr[i] })),
+          borderColor: '#0f9960',
+          borderWidth: 2.2,
+          pointRadius: 0
+        });
+      }
+      datasets.push({
+        label: 'Separator Well Tests',
+        data: (data.tests || []).map(t => ({ x: Date.parse(t.t_mid), y: t[phase] })),
+        showLine: false,
+        borderColor: '#10161a',
+        backgroundColor: '#f5b041',
+        borderWidth: 1.4,
+        pointStyle: 'rectRot',
+        pointRadius: 6
+      });
+
+      const plugins = vfmZoomHandle ? [vfmZoomHandle.hoverPlugin] : [];
+      vfmChartInst = chart(root.querySelector('#vfm-main-chart'), {
+        type: 'line',
+        data: { datasets },
+        plugins,
+        options: {
+          plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, font: { size: 11.5 } } } },
+          scales: {
+            x: {
+              type: 'linear',
+              ticks: { maxTicksLimit: 9, callback: v => new Date(v).toISOString().slice(0, 10) },
+              grid: { color: '#edf2f7' }
+            },
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: unit },
+              grid: { color: '#edf2f7' }
+            }
+          }
+        }
+      });
+    }
+
+    function renderBenchSummary() {
+      if (!perfRoot || !modelsData) return;
+      const statusMap = {};
+      (modelsData.models || []).forEach(m => { statusMap[m.name] = m.status || 'not computed'; });
+      const rows = (modelsData.benchmark_summary || [])
+        .filter(r => r.cv_mode === 'walk_forward')
+        .sort((a, b) => (a.oil_mape ?? a.oil_rate_stbd_mape ?? 999) - (b.oil_mape ?? b.oil_rate_stbd_mape ?? 999));
+      const tbody = perfRoot.querySelector('#vfm-bench-body');
+      tbody.innerHTML = rows.map(r => {
+        const st = statusMap[r.model] || 'not computed';
+        const isReady = st.indexOf('ready') === 0;
+        const stCls = isReady ? 'green' : (st === 'running' ? 'amber' : '');
+        return '<tr class="' + (r.model === selectedModel ? 'highlight' : '') + '" data-bmodel="' + esc(r.model) + '" style="cursor:pointer;" title="Click to activate ' + esc(r.model) + '">' +
+          '<td><strong>' + esc(r.model) + '</strong></td>' +
+          '<td><span class="chip ' + ((r.family || '').indexOf('grey-box') >= 0 || r.family === 'synthetic/ML' ? 'green' : '') + '">' + esc(r.family || '—') + '</span></td>' +
+          '<td><span class="chip ' + stCls + '">' + esc(st) + '</span></td>' +
+          '<td class="num">' + fmt(r.oil_mae ?? r.oil_rate_stbd_mae, 1) + '</td>' +
+          '<td class="num"><strong>' + fmt(r.oil_mape ?? r.oil_rate_stbd_mape, 2) + '%</strong></td>' +
+          '<td class="num">' + fmt(r.water_mape ?? r.water_rate_stbd_mape, 2) + '%</td>' +
+          '<td class="num">' + fmt(r.gas_mape ?? r.gas_rate_mscfd_mape, 2) + '%</td>' +
+          '<td class="num">' + fmt(r.liquid_mape ?? r.liquid_rate_stbd_mape, 2) + '%</td>' +
+        '</tr>';
+      }).join('') || '<tr><td colspan="8" class="small-muted">No benchmark rows loaded.</td></tr>';
+      tbody.querySelectorAll('tr[data-bmodel]').forEach(tr => {
+        tr.addEventListener('click', () => selectAndActivateModel(tr.getAttribute('data-bmodel')));
+      });
+    }
+
+    registerTab({
+      id: 'vfm',
+      title: 'VFM Predictions',
+      order: 3,
+      render(c) { root = c; buildSkeleton(c); },
+      onShow() { loadVFM(); },
+      onWellChange() { if (root && root.classList.contains('active')) loadVFM(); }
+    });
+
+    registerTab({
+      id: 'model_perf',
+      title: 'Model Performance',
+      order: 5,
+      render(c) { perfRoot = c; buildPerfSkeleton(c); },
+      onShow() { renderBenchSummary(); loadVFMDiagnostics(); }
+    });
+  })();
+
+  // =========================================================================
+  // TAB 4: PTA & RESERVOIR BEHAVIOUR (Interactive Plots + Manual 2-Point Fit!)
+  // =========================================================================
+  (function registerPTATab() {
+    let root = null;
+    let ptaData = null;
+    let logChart = null;
+    let hornerChart = null;
+    let tornadoChart = null;
+    let logZoomHandle = null;
+    let hornerZoomHandle = null;
+
+    // Manual 2-Point PTA state + Active Methodology Selector + Qo Tornado controls
+    let pickMode = false;
+    let pickedPts = []; // [{dt, pws, xh}]
+    let fitMode = 'two_point'; // 'two_point' | 'interval_ols'
+    let activePtaMethod = 'hybrid_intersection';
+    let manualViewActive = false;
+    let ptaPlotMode = 'box'; // 'box' (drag XY zoom rectangle) | 'pan' (drag shift plot)
+    let tornadoQoPct = 20; // default +-20% Qo sensitivity sweep across the 4 required PTA outputs
+
+    function updatePickUI() {
+      if (!root) return;
+      const btn = root.querySelector('#pta-manual-btn');
+      const bar = root.querySelector('#pta-pick-banner');
+      const msg = root.querySelector('#pta-pick-msg');
+      const resetBtn = root.querySelector('#pta-manual-reset');
+      const modeSel = root.querySelector('#pta-fit-mode');
+      const hasManual = Boolean(ptaData && ptaData.manual_fit);
+
+      if (btn) {
+        btn.classList.toggle('primary', pickMode);
+        btn.textContent = pickMode ? 'Picking Points (Active)...' : 'Manual 2-Point Fit';
+      }
+      if (resetBtn) resetBtn.style.display = hasManual ? 'inline-block' : 'none';
+      if (modeSel) modeSel.style.display = (pickMode || hasManual) ? 'inline-block' : 'none';
+
+      if (bar && msg) {
+        if (pickMode) {
+          bar.style.display = 'flex';
+          if (pickedPts.length === 0) {
+            msg.innerHTML = '<strong>Step 1 of 2:</strong> Click <strong>Point 1</strong> (radial-flow start) on either the <em>Horner Semilog</em> or <em>Log-Log</em> plot.';
+          } else {
+            msg.innerHTML = '<strong>Step 2 of 2:</strong> Point 1 pinned at <code>Δt = ' + fmt(pickedPts[0].dt, 3) + ' hr</code>. Now click <strong>Point 2</strong> (radial-flow end) to fit the line.';
+          }
+        } else {
+          bar.style.display = 'none';
+        }
+      }
+      const lc = root.querySelector('#pta-loglog-canvas');
+      const hc = root.querySelector('#pta-horner-canvas');
+      if (lc) lc.style.cursor = pickMode ? 'crosshair' : 'grab';
+      if (hc) hc.style.cursor = pickMode ? 'crosshair' : 'grab';
+    }
+
+    // Overlay plugin drawing glowing P1/P2 pins and manual/selected guides on BOTH PTA charts
+    function makePtaPinPlugin(chartKind) {
+      return {
+        id: 'ptaPins_' + chartKind,
+        afterDatasetsDraw: function (ch) {
+          if (!ptaData) return;
+          const a = ch.chartArea, sx = ch.scales.x, sy = ch.scales.y;
+          if (!a || !sx || !sy) return;
+          const pins = [];
+          if (pickMode && pickedPts.length) {
+            pickedPts.forEach((p, idx) => pins.push({ dt: p.dt, xh: p.xh, pws: p.pws, label: 'P' + (idx + 1), color: '#7c3aed' }));
+          } else if (ptaData.horner_plot && ptaData.horner_plot.manual_pins && ptaData.horner_plot.manual_pins.length) {
+            ptaData.horner_plot.manual_pins.forEach(mp => pins.push({ dt: mp.dt, xh: mp.x, pws: mp.y, label: mp.label, color: '#7c3aed' }));
+          }
+          if (!pins.length) return;
+          const ctx = ch.ctx;
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(a.left, a.top, a.right - a.left, a.bottom - a.top);
+          ctx.clip();
+
+          pins.forEach(pin => {
+            const xVal = chartKind === 'loglog' ? pin.dt : pin.xh;
+            const px = sx.getPixelForValue(xVal);
+            if (!isFinite(px)) return;
+            // Vertical guide line
+            ctx.strokeStyle = 'rgba(124, 58, 237, 0.72)';
+            ctx.lineWidth = 1.6;
+            ctx.setLineDash([4, 3]);
+            ctx.beginPath();
+            ctx.moveTo(px, a.top);
+            ctx.lineTo(px, a.bottom);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Pin badge
+            let py = a.top + 18;
+            if (chartKind === 'horner' && isFinite(pin.pws)) {
+              py = sy.getPixelForValue(pin.pws);
+              ctx.fillStyle = '#ffffff';
+              ctx.strokeStyle = '#7c3aed';
+              ctx.lineWidth = 2.5;
+              ctx.beginPath();
+              ctx.arc(px, py, 6.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+            } else if (chartKind === 'loglog') {
+              // Find closest derivative point to pin vertically
+              const ser = ptaData.series || {};
+              const dtArr = ser.dt_hr || [], derArr = ser.derivative_psi || [];
+              let best = -1, bd = Infinity;
+              for (let i = 0; i < dtArr.length; i++) {
+                if (dtArr[i] > 0 && derArr[i] > 0) {
+                  const d = Math.abs(Math.log10(dtArr[i]) - Math.log10(Math.max(1e-5, pin.dt)));
+                  if (d < bd) { bd = d; best = i; }
+                }
+              }
+              if (best >= 0) {
+                py = sy.getPixelForValue(derArr[best]);
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#7c3aed';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(px, py, 6.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+              }
+            }
+
+            // Label pill
+            const tag = pin.label + ' (' + fmt(pin.dt, 2) + 'h)';
+            ctx.font = '700 10.5px ui-monospace, monospace';
+            const tw = ctx.measureText(tag).width + 10;
+            const bx = Math.max(a.left + 4, Math.min(a.right - tw - 4, px - tw / 2));
+            const by = Math.max(a.top + 4, Math.min(a.bottom - 20, py - 24));
+            ctx.fillStyle = '#7c3aed';
+            ctx.fillRect(bx, by, tw, 17);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(tag, bx + 5, by + 12);
+          });
+          ctx.restore();
+        }
+      };
+    }
+
+    function snapPointFromClick(chartKind, ch, clickX, clickY) {
+      if (!ptaData || !ch || !ch.scales.x || !ch.scales.y) return null;
+      const hp = ptaData.horner_plot || {};
+      const hPts = hp.points || [];
+      if (!hPts.length) return null;
+
+      if (chartKind === 'horner') {
+        let best = null, bestDist = Infinity;
+        for (let i = 0; i < hPts.length; i++) {
+          const p = hPts[i];
+          const px = ch.scales.x.getPixelForValue(p.x);
+          const py = ch.scales.y.getPixelForValue(p.y);
+          const d = Math.hypot(px - clickX, py - clickY);
+          if (d < bestDist) { bestDist = d; best = p; }
+        }
+        return best ? { dt: best.dt, xh: best.x, pws: best.y } : null;
+      } else {
+        // Log-Log click -> snap by log10(dt) to closest Horner point so both charts stay 100% synced
+        const clickDt = ch.scales.x.getValueForPixel(clickX);
+        if (!(clickDt > 0)) return null;
+        const lClick = Math.log10(clickDt);
+        let best = null, bestDist = Infinity;
+        for (let i = 0; i < hPts.length; i++) {
+          const p = hPts[i];
+          if (!(p.dt > 0)) continue;
+          const d = Math.abs(Math.log10(p.dt) - lClick);
+          if (d < bestDist) { bestDist = d; best = p; }
+        }
+        return best ? { dt: best.dt, xh: best.x, pws: best.y } : null;
+      }
+    }
+
+    async function submitManualFit(dt1, dt2) {
+      if (!ptaData) return;
+      try {
+        const res = await post('/api/pta/manual_fit', {
+          event: ptaData.event_id,
+          dt1_hr: dt1,
+          dt2_hr: dt2,
+          fit_mode: fitMode
+        }, 'Fitting manual 2-point Horner straight line...');
+        pickMode = false;
+        pickedPts = [];
+        manualViewActive = true;
+        ptaData = res;
+        renderPTA(res);
+        toast('Manual PTA fit applied: k = ' + fmt(res.manual_fit.k, 2) + ' mD, S = ' + fmt(res.manual_fit.skin, 2), 'success');
+      } catch (_) {
+        pickedPts = [];
+        updatePickUI();
+        if (logChart) logChart.draw();
+        if (hornerChart) hornerChart.draw();
+      }
+    }
+
+    function handlePickClick(chartKind, ch, clickX, clickY) {
+      const pt = snapPointFromClick(chartKind, ch, clickX, clickY);
+      if (!pt) return;
+      pickedPts.push(pt);
+      updatePickUI();
+      if (logChart) logChart.draw();
+      if (hornerChart) hornerChart.draw();
+      if (pickedPts.length >= 2) {
+        const dt1 = pickedPts[0].dt, dt2 = pickedPts[1].dt;
+        if (Math.abs(dt2 - dt1) < 1e-4) {
+          toast('Select two distinct time points for the straight-line fit.', 'error');
+          pickedPts.pop();
+          updatePickUI();
+          return;
+        }
+        submitManualFit(dt1, dt2);
+      }
+    }
+
+    function buildSkeleton(el) {
+      el.innerHTML =
+        '<div class="card" style="padding:10px 14px;">' +
+          '<div class="toolbar" style="justify-content:space-between;">' +
+            '<div class="toolbar">' +
+              '<strong id="pta-well-lbl" style="font-size:14px;">&mdash;</strong>' +
+              '<select id="pta-ev-sel" class="ctrl" style="min-width:210px;"></select>' +
+              '<select id="pta-src-sel" class="ctrl" style="min-width:295px;">' +
+                '<option value="hybrid_intersection">★ Hybrid L3: Intersection (Horner ∩ Bourdet)</option>' +
+                '<option value="stehfest_analytical">★ Stehfest 12-Term Analytical Match (WBS+Skin+Boundary)</option>' +
+                '<option value="von_schroeter_deconv">★ von Schroeter Nonlinear Deconvolution (SPE-77688)</option>' +
+                '<option value="ilk_bspline_deconv">★ Ilk–Valkó–Blasingame B-Spline Deconv (SPE-102869)</option>' +
+                '<option value="agarwal_equiv">★ Agarwal Equivalent-Time Bourdet &amp; Semilog (SPE-9289)</option>' +
+                '<option value="blasingame_integral">★ Blasingame Pressure-Integral ΔP_id (SPE-19099)</option>' +
+                '<option value="odeh_jones_multirate">★ Odeh–Jones Multi-Rate Superposition (SPE-1082)</option>' +
+                '<option value="tiab_tds">Tiab Direct Synthesis — TDS (SPE-26138)</option>' +
+                '<option value="mdh_muskat">MDH Semilog + Muskat Extrapolation (SPE-950)</option>' +
+                '<option value="hybrid_horner">Hybrid L1: Pure Horner (Theil-Sen + PELT)</option>' +
+                '<option value="hybrid_bourdet">Hybrid L2: Bourdet Derivative (L=0.15 + PELT)</option>' +
+              '</select>' +
+            '</div>' +
+            '<div class="toolbar">' +
+              '<div class="seg" id="pta-pmode-seg" title="Plot drag tool: Box Zoom selects XY region; Pan shifts plot">' +
+                '<button type="button" data-ptamode="box" class="active">⬚ Box Zoom</button>' +
+                '<button type="button" data-ptamode="pan">✋ Pan</button>' +
+              '</div>' +
+              '<button type="button" id="pta-manual-btn" class="btn">Manual 2-Point Fit</button>' +
+              '<select id="pta-fit-mode" class="ctrl" style="display:none;">' +
+                '<option value="two_point">Exact 2-Point Line</option>' +
+                '<option value="interval_ols">Interval OLS [P1–P2]</option>' +
+              '</select>' +
+              '<button type="button" id="pta-manual-reset" class="btn" style="display:none; color:#db3737; border-color:#f3bcbc;">Reset to Auto</button>' +
+              '<button type="button" id="pta-zoom-reset" class="btn">Reset Axes</button>' +
+              '<button type="button" id="pta-dl-xlsx" class="btn primary">Download PTA .xlsx</button>' +
+              '<button type="button" id="pta-dl-csv" class="btn">Download .csv</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div id="pta-pick-banner" style="display:none; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; background:#f3e8ff; border:1px solid #c4b5fd; border-radius:6px; color:#5b21b6; font-size:12.5px;">' +
+          '<div id="pta-pick-msg"></div>' +
+          '<button type="button" id="pta-pick-cancel" class="btn">Cancel</button>' +
+        '</div>' +
+        '<div id="pta-empty" class="card small-muted" style="display:none; padding:24px; text-align:center;">No pressure build-up (shut-in) events recorded for this well. Select a well with an <strong>IARF</strong> badge in the sidebar to view PTA diagnostics.</div>' +
+        '<div id="pta-content" style="display:none; flex-direction:column; gap:14px;">' +
+          '<div class="grid-4" id="pta-kpis"></div>' +
+          '<div class="card" style="padding:10px 14px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px;">' +
+            '<div id="pta-checks"></div>' +
+            '<div id="pta-win-summary" class="small-muted"></div>' +
+          '</div>' +
+          '<div id="pta-regime-banner" class="card" style="padding:10px 14px; border-left:4px solid #2d72d2; background:#f8fafc; display:none;"></div>' +
+          '<div class="grid-2">' +
+            '<div class="card">' +
+              '<div class="card-hdr">' +
+                '<h3 class="card-title">Log-Log Diagnostic Plot (ΔP &amp; Bourdet Derivative)</h3>' +
+                '<span id="pta-loglog-sub" class="small-muted">Scroll/Drag axes to rescale · Drag plot to pan</span>' +
+              '</div>' +
+              '<div style="height:335px; position:relative;"><canvas id="pta-loglog-canvas"></canvas></div>' +
+            '</div>' +
+            '<div class="card">' +
+              '<div class="card-hdr"><h3 class="card-title">Horner / Semilog Plot (Pws vs. Horner Time)</h3><span id="pta-horner-sub" class="small-muted">&mdash;</span></div>' +
+              '<div style="height:335px; position:relative;"><canvas id="pta-horner-canvas"></canvas></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="card" id="pta-tornado-card">' +
+            '<div class="card-hdr">' +
+              '<div>' +
+                '<h3 class="card-title">Oil Rate (Qo) Sensitivity Tornado — Impact on the 4 Required PTA Outputs</h3>' +
+                '<span id="pta-tornado-sub" class="small-muted">Tweaks pre-shut-in Qo by ±20% and evaluates exact response of Permeability k, Skin S, ΔP_skin, and Horner Slope m</span>' +
+              '</div>' +
+              '<div class="toolbar">' +
+                '<label class="small-muted" style="font-weight:700;">Qo Perturbation:</label>' +
+                '<select id="pta-torn-pct-sel" class="ctrl" title="Oil Rate Qo sensitivity sweep">' +
+                  '<option value="5">Qo ±5%</option>' +
+                  '<option value="10">Qo ±10%</option>' +
+                  '<option value="15">Qo ±15%</option>' +
+                  '<option value="20" selected>Qo ±20%</option>' +
+                  '<option value="30">Qo ±30%</option>' +
+                '</select>' +
+              '</div>' +
+            '</div>' +
+            '<div id="pta-tornado-diag" style="padding:8px 12px; margin-bottom:10px; border-left:4px solid #d9822b; background:#fffaf0; border-radius:4px; font-size:12px; color:#394b59; line-height:1.5;"></div>' +
+            '<div style="height:270px; position:relative;"><canvas id="pta-tornado-canvas"></canvas></div>' +
+            '<div class="table-wrap" style="margin-top:10px;"><table class="data-table">' +
+              '<thead><tr><th>Required PTA Output</th><th class="num">Base (at Qo)</th><th class="num" id="pta-th-qlo">At Qo -20%</th><th class="num" id="pta-th-qhi">At Qo +20%</th><th class="num">Absolute Δ (- / +)</th><th class="num">% Change (- / +)</th><th>Exact Physics Sensitivity Law</th></tr></thead>' +
+              '<tbody id="pta-tornado-body"></tbody>' +
+            '</table></div>' +
+          '</div>' +
+          '<div class="card">' +
+            '<div class="card-hdr"><h3 class="card-title">Automated Reservoir Behaviour Interpretation</h3><span id="pta-interp-tag" class="chip blue">Engineering Diagnosis</span></div>' +
+            '<div class="grid-2" id="pta-interp-grid"></div>' +
+          '</div>' +
+          '<div class="card">' +
+            '<div class="card-hdr"><h3 class="card-title">Estimated Reservoir Properties — All 9+ Hidden-IARF &amp; Deconvolution Methods</h3><span class="small-muted">Click any row to switch the live plots &amp; KPIs to that methodology</span></div>' +
+            '<div class="table-wrap"><table class="data-table">' +
+              '<thead><tr><th>PTA Methodology</th><th class="num">Horner Slope m (psi/cyc)</th><th class="num">Permeability k (mD)</th><th class="num">kh (mD·ft)</th><th class="num">Skin Factor (S)</th><th class="num">ΔP Skin (psi)</th><th>Window / Model Diagnostics</th></tr></thead>' +
+              '<tbody id="pta-methods-body"></tbody>' +
+            '</table></div>' +
+          '</div>' +
+        '</div>';
+
+      // Wire Plotly/Spotfire-grade interactive Shift + Rescale + XY Box Zoom on BOTH PTA charts!
+      logZoomHandle = window.AxisZoom.attach(el.querySelector('#pta-loglog-canvas'), () => logChart, {
+        xScaleId: 'x', yLeftScaleId: 'y', wheelPlotMode: 'xy', boxZoomMode: 'xy',
+        getPlotMode: () => ptaPlotMode,
+        getPlotCursor: () => pickMode ? 'crosshair' : (ptaPlotMode === 'box' ? 'crosshair' : 'grab'),
+        shouldIgnorePlotDrag: (e, ch, x, y) => {
+          if (pickMode) { handlePickClick('loglog', ch, x, y); return true; }
+          return false;
+        }
+      });
+      hornerZoomHandle = window.AxisZoom.attach(el.querySelector('#pta-horner-canvas'), () => hornerChart, {
+        xScaleId: 'x', yLeftScaleId: 'y', wheelPlotMode: 'xy', boxZoomMode: 'xy',
+        getPlotMode: () => ptaPlotMode,
+        getPlotCursor: () => pickMode ? 'crosshair' : (ptaPlotMode === 'box' ? 'crosshair' : 'grab'),
+        shouldIgnorePlotDrag: (e, ch, x, y) => {
+          if (pickMode) { handlePickClick('horner', ch, x, y); return true; }
+          return false;
+        }
+      });
+
+      el.querySelectorAll('#pta-pmode-seg button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          ptaPlotMode = btn.getAttribute('data-ptamode');
+          el.querySelectorAll('#pta-pmode-seg button').forEach(b => b.classList.toggle('active', b === btn));
+        });
+      });
+
+      el.querySelector('#pta-torn-pct-sel').addEventListener('change', e => {
+        tornadoQoPct = Number(e.target.value) || 20;
+        if (ptaData) renderPTA(ptaData);
+      });
+
+      el.querySelector('#pta-ev-sel').addEventListener('change', e => {
+        pickMode = false; pickedPts = [];
+        if (e.target.value) loadPTAEvent(e.target.value);
+      });
+      el.querySelector('#pta-src-sel').addEventListener('change', e => {
+        activePtaMethod = e.target.value || 'hybrid_intersection';
+        manualViewActive = false;
+        if (ptaData) renderPTA(ptaData);
+      });
+      el.querySelector('#pta-manual-btn').addEventListener('click', () => {
+        pickMode = !pickMode;
+        pickedPts = [];
+        updatePickUI();
+        if (logChart) logChart.draw();
+        if (hornerChart) hornerChart.draw();
+      });
+      el.querySelector('#pta-pick-cancel').addEventListener('click', () => {
+        pickMode = false;
+        pickedPts = [];
+        updatePickUI();
+        if (logChart) logChart.draw();
+        if (hornerChart) hornerChart.draw();
+      });
+      el.querySelector('#pta-fit-mode').addEventListener('change', e => {
+        fitMode = e.target.value;
+        if (ptaData && ptaData.manual_fit) {
+          submitManualFit(ptaData.manual_fit.dt1_hr, ptaData.manual_fit.dt2_hr);
+        }
+      });
+      el.querySelector('#pta-manual-reset').addEventListener('click', async () => {
+        if (!ptaData) return;
+        const res = await post('/api/pta/manual_fit', { event: ptaData.event_id, reset: true }, 'Restoring automated Hybrid PTA...');
+        pickMode = false; pickedPts = [];
+        ptaData = res;
+        renderPTA(res);
+        toast('Restored automated Hybrid Horner ∩ Bourdet fit.', 'info');
+      });
+      el.querySelector('#pta-zoom-reset').addEventListener('click', () => {
+        if (ptaData) renderPTA(ptaData);
+      });
+      el.querySelector('#pta-dl-xlsx').addEventListener('click', () => {
+        const src = el.querySelector('#pta-src-sel').value;
+        window.location.href = '/api/export/pta?source=' + encodeURIComponent(src) + '&format=xlsx';
+      });
+      el.querySelector('#pta-dl-csv').addEventListener('click', () => {
+        const src = el.querySelector('#pta-src-sel').value;
+        window.location.href = '/api/export/pta?source=' + encodeURIComponent(src) + '&format=csv';
+      });
+    }
+
+    function refreshWellEvents() {
+      if (!root || !state.overview || !state.currentWell) return;
+      pickMode = false; pickedPts = [];
+      root.querySelector('#pta-well-lbl').textContent = state.currentWell;
+      const evs = (state.overview.events || []).filter(e => e.well_name === state.currentWell);
+      const sel = root.querySelector('#pta-ev-sel');
+      if (!evs.length) {
+        sel.innerHTML = '<option value="">No shut-in events</option>';
+        root.querySelector('#pta-empty').style.display = 'block';
+        root.querySelector('#pta-content').style.display = 'none';
+        updatePickUI();
+        return;
+      }
+      root.querySelector('#pta-empty').style.display = 'none';
+      sel.innerHTML = evs.map(e =>
+        '<option value="' + esc(e.event_id) + '">' + esc((e.shut_in_start || '').slice(0, 16).replace('T', ' ')) + ' (' + fmt(e.duration_hr, 1) + ' hr)</option>'
+      ).join('');
+      loadPTAEvent(evs[0].event_id);
+    }
+
+    async function loadPTAEvent(eid) {
+      try {
+        const d = await api('/api/pta?event=' + encodeURIComponent(eid));
+        ptaData = d;
+        if (d.manual_fit && d.manual_fit.fit_mode) {
+          fitMode = d.manual_fit.fit_mode;
+          const ms = root.querySelector('#pta-fit-mode');
+          if (ms) ms.value = fitMode;
+        }
+        renderPTA(d);
+      } catch (err) {
+        toast('PTA load error: ' + err.message, 'error');
+      }
+    }
+
+    function renderPTA(d) {
+      if (!root || !d) return;
+      root.querySelector('#pta-content').style.display = 'flex';
+      updatePickUI();
+      const hyb = d.hybrid_pta || null;
+      const mf = (manualViewActive && d.manual_fit) ? d.manual_fit : null;
+      const l1 = hyb ? hyb.logic1_horner : {}, l2 = hyb ? hyb.logic2_bourdet : {}, l3 = hyb ? hyb.logic3_intersection : {};
+      const res = d.results || {};
+      const adv = d.advanced_pta || {};
+      const an = (adv.analytical_match && adv.analytical_match.available) ? adv.analytical_match : null;
+      const dc = (adv.deconvolution && adv.deconvolution.available) ? adv.deconvolution : null;
+      const ilk = (adv.ilk_bspline_deconv && adv.ilk_bspline_deconv.available) ? adv.ilk_bspline_deconv : null;
+      const ag = (adv.agarwal_equiv && adv.agarwal_equiv.available) ? adv.agarwal_equiv : null;
+      const bl = (adv.blasingame_integral && adv.blasingame_integral.available) ? adv.blasingame_integral : null;
+      const oj = (adv.odeh_jones_multirate && adv.odeh_jones_multirate.available) ? adv.odeh_jones_multirate : null;
+      const td = (adv.tiab_tds && adv.tiab_tds.available) ? adv.tiab_tds : null;
+      const mdh = (adv.mdh_muskat && adv.mdh_muskat.available) ? adv.mdh_muskat : null;
+
+      // Resolve ONLY the currently selected methodology (or active Manual 2-Point override!)
+      const selEl = root.querySelector('#pta-src-sel');
+      if (selEl && selEl.value !== activePtaMethod) selEl.value = activePtaMethod;
+
+      const methodLookup = {
+        hybrid_intersection: hyb ? { key: 'hybrid_intersection', badge: 'HYBRID L3 AUTO', color: '#0f9960', ...l3, win_hr: hyb.intersect_win_hr, kpi3Lbl: 'IARF Consensus Window', kpi3Val: fmt(hyb.intersect_win_hr[0], 2) + '–' + fmt(hyb.intersect_win_hr[1], 2) + ' h', kpi3Sub: 'Horner R² = ' + fmt(hyb.r2_horner, 4) + ' · Span ' + fmt(hyb.intersect_span_cyc, 2) + ' cyc', kpi4Lbl: 'Reliability Confidence', kpi4Val: fmt(hyb.confidence_score, 0) + ' / 100', kpi4Chip: hyb.confidence_rating + ' CONFIDENCE', kpi4Cls: hyb.confidence_rating === 'HIGH' ? 'green' : 'blue' } : null,
+        stehfest_analytical: an ? { key: 'stehfest_analytical', badge: 'STEHFEST ANALYTICAL', color: '#db3737', ...an, kpi3Lbl: 'Type-Curve Match (WBS + Bnd)', kpi3Val: 'der ' + fmt(an.deriv_mape_pct, 1) + '% MAPE', kpi3Sub: 'C=' + fmt(an.c_bbl_psi, 4) + ' bbl/psi · r_e=' + fmt(an.re_ft, 0) + ' ft (' + fmt(an.drainage_area_acres, 0) + ' ac)', kpi4Lbl: 'Active Methodology', kpi4Val: 'STEHFEST 12', kpi4Chip: 'k ±' + fmt(an.k_std_pct, 1) + '% · S ±' + fmt(an.skin_std, 2), kpi4Cls: 'blue' } : null,
+        von_schroeter_deconv: dc ? { key: 'von_schroeter_deconv', badge: 'VON SCHROETER DECONV', color: '#0284c7', ...dc, kpi3Lbl: 'Deconvolved Horizon', kpi3Val: fmt(dc.horizon_hr, 0) + ' hr', kpi3Sub: 'BU Fit RMSE = ' + fmt(dc.bu_fit_rmse_psi, 2) + ' psi · ' + dc.n_rate_steps + ' VFM steps', kpi4Lbl: 'Active Methodology', kpi4Val: 'DECONV SPE-77688', kpi4Chip: 'Nonlinear Log-Spline', kpi4Cls: 'blue' } : null,
+        ilk_bspline_deconv: ilk ? { key: 'ilk_bspline_deconv', badge: 'ILK B-SPLINE DECONV', color: '#7c3aed', ...ilk, kpi3Lbl: 'Convex B-Spline Horizon', kpi3Val: fmt(ilk.horizon_hr, 0) + ' hr', kpi3Sub: 'BU Fit RMSE = ' + fmt(ilk.bu_fit_rmse_psi, 2) + ' psi · ' + ilk.n_basis + ' B-splines', kpi4Lbl: 'Active Methodology', kpi4Val: 'ILK SPE-102869', kpi4Chip: 'Strictly Convex NNLS', kpi4Cls: 'blue' } : null,
+        agarwal_equiv: ag ? { key: 'agarwal_equiv', badge: 'AGARWAL Δt_e', color: '#0f9960', ...ag, kpi3Lbl: 'Agarwal Δt_e Window', kpi3Val: fmt(ag.win_hr[0], 2) + '–' + fmt(ag.win_hr[1], 2) + ' h', kpi3Sub: 'Semilog R² = ' + fmt(ag.r2_semilog, 4) + ' · p* = ' + fmt(ag.p_star, 1) + ' psia', kpi4Lbl: 'Active Methodology', kpi4Val: 'AGARWAL SPE-9289', kpi4Chip: 'Equivalent Time Δt_e', kpi4Cls: 'green' } : null,
+        blasingame_integral: bl ? { key: 'blasingame_integral', badge: 'BLASINGAME ΔP_id', color: '#d9822b', ...bl, kpi3Lbl: 'Integral Derivative Window', kpi3Val: fmt(bl.win_hr[0], 2) + '–' + fmt(bl.win_hr[1], 2) + ' h', kpi3Sub: 'Noise-immune ΔP_id + ΔP_idd · P\'_r=' + fmt(bl.radial_deriv_asymptote_psi, 1) + ' psi', kpi4Lbl: 'Active Methodology', kpi4Val: 'BLASINGAME 19099', kpi4Chip: 'Pressure-Integral Filter', kpi4Cls: 'amber' } : null,
+        odeh_jones_multirate: oj ? { key: 'odeh_jones_multirate', badge: 'ODEH-JONES MULTI-RATE', color: '#184a90', ...oj, kpi3Lbl: 'Superposition Window', kpi3Val: fmt(oj.win_hr[0], 2) + '–' + fmt(oj.win_hr[1], 2) + ' h', kpi3Sub: oj.n_rate_steps + ' VFM rate steps · R² = ' + fmt(oj.r2_superpos, 4), kpi4Lbl: 'Active Methodology', kpi4Val: 'ODEH-JONES 1082', kpi4Chip: 'Variable-Rate Superpos.', kpi4Cls: 'blue' } : null,
+        tiab_tds: td ? { key: 'tiab_tds', badge: 'TIAB DIRECT SYNTHESIS', color: '#0f766e', ...td, kpi3Lbl: 'WBS Hump Anchor', kpi3Val: 't_pk = ' + fmt(td.t_peak_hr, 3) + ' h', kpi3Sub: 'C = ' + fmt(td.c_bbl_psi, 4) + ' bbl/psi · C_D = ' + fmt(td.c_d, 0), kpi4Lbl: 'Active Methodology', kpi4Val: 'TIAB TDS 26138', kpi4Chip: 'Direct Anchor Synthesis', kpi4Cls: 'green' } : null,
+        mdh_muskat: mdh ? { key: 'mdh_muskat', badge: 'MDH + MUSKAT', color: '#475569', ...mdh, kpi3Lbl: 'Muskat Compartment p̄', kpi3Val: mdh.p_bar_muskat_psia ? fmt(mdh.p_bar_muskat_psia, 1) + ' psia' : '—', kpi3Sub: 'MDH [' + fmt(mdh.win_hr[0], 2) + '–' + fmt(mdh.win_hr[1], 2) + ' h]' + (mdh.muskat_r2 ? ' · Muskat R²=' + fmt(mdh.muskat_r2, 4) : ''), kpi4Lbl: 'Active Methodology', kpi4Val: 'MDH / MUSKAT', kpi4Chip: 'tp-Independent Semilog', kpi4Cls: 'blue' } : null,
+        hybrid_horner: hyb ? { key: 'hybrid_horner', badge: 'HYBRID L1: HORNER', color: '#2d72d2', ...l1, win_hr: l1.win_hr, kpi3Lbl: 'Horner Theil-Sen Window', kpi3Val: fmt(l1.win_hr[0], 2) + '–' + fmt(l1.win_hr[1], 2) + ' h', kpi3Sub: 'PELT change-point + robust Horner slope', kpi4Lbl: 'Active Methodology', kpi4Val: 'HYBRID L1', kpi4Chip: 'Horner-Only Logic', kpi4Cls: 'blue' } : null,
+        hybrid_bourdet: hyb ? { key: 'hybrid_bourdet', badge: 'HYBRID L2: BOURDET', color: '#d9822b', ...l2, win_hr: l2.win_hr, kpi3Lbl: 'Bourdet Plateau Window', kpi3Val: fmt(l2.win_hr[0], 2) + '–' + fmt(l2.win_hr[1], 2) + ' h', kpi3Sub: 'Bourdet L=0.15 sliding window + PELT', kpi4Lbl: 'Active Methodology', kpi4Val: 'HYBRID L2', kpi4Chip: 'Bourdet-Only Logic', kpi4Cls: 'amber' } : null
+      };
+
+      const chosen = mf ? null : (methodLookup[activePtaMethod] || methodLookup.hybrid_intersection);
+      const activeSrc = mf || chosen || null;
+      const kVal = activeSrc ? activeSrc.k : res.k_md;
+      const khVal = activeSrc ? activeSrc.kh : res.kh_md_ft;
+      const sVal = activeSrc ? activeSrc.skin : res.apparent_skin;
+      const mVal = activeSrc ? activeSrc.m : res.semilog_slope_psi_per_cycle;
+      const dpVal = activeSrc ? activeSrc.dP_skin : res.skin_pressure_drop_psi;
+      const winActive = mf ? mf.win_hr : ((chosen && chosen.win_hr) ? chosen.win_hr : (hyb ? hyb.intersect_win_hr : null));
+      const accentColor = mf ? '#7c3aed' : (chosen ? chosen.color : '#184a90');
+
+      root.querySelector('#pta-kpis').innerHTML =
+        '<div class="kpi-card"><span class="kpi-lbl">Permeability (k)</span><span class="kpi-val" style="color:' + accentColor + ';">' + fmt(kVal, 2) + ' mD</span><span class="kpi-sub">kh = ' + fmt(khVal, 0) + ' mD·ft · m = ' + fmt(mVal, 2) + ' psi/cyc</span></div>' +
+        '<div class="kpi-card"><span class="kpi-lbl">Skin Factor (S)</span><span class="kpi-val">' + (sVal >= 0 ? '+' : '') + fmt(sVal, 2) + '</span><span class="kpi-sub">ΔP_skin = ' + fmt(dpVal, 1) + ' psi</span></div>' +
+        '<div class="kpi-card"><span class="kpi-lbl">' + esc(mf ? 'Manual 2-Point Window' : (chosen ? chosen.kpi3Lbl : 'IARF Window')) + '</span><span class="kpi-val" style="color:' + accentColor + ';font-size:18px;">' + esc(mf ? (fmt(mf.win_hr[0], 2) + '–' + fmt(mf.win_hr[1], 2) + ' h') : (chosen ? chosen.kpi3Val : '—')) + '</span><span class="kpi-sub">' + esc(mf ? ('Horner R² = ' + fmt(mf.r2_horner, 4) + ' · Span ' + fmt(mf.span_cyc, 2) + ' cyc') : (chosen ? chosen.kpi3Sub : '—')) + '</span></div>' +
+        '<div class="kpi-card"><span class="kpi-lbl">' + esc(mf ? 'Analysis Mode' : (chosen ? chosen.kpi4Lbl : 'Status')) + '</span><span class="kpi-val" style="font-size:17px;">' + esc(mf ? 'MANUAL FIT' : (chosen ? chosen.kpi4Val : '—')) + '</span><span class="kpi-sub">' + (mf ? '<span class="chip" style="background:#f3e8ff;color:#6d28d9;">' + esc(mf.fit_mode === 'interval_ols' ? 'Interval OLS [P1–P2]' : 'Exact 2-Point Line') + '</span>' : '<span class="chip ' + esc(chosen ? chosen.kpi4Cls : 'blue') + '">' + esc(chosen ? chosen.kpi4Chip : d.status) + '</span>') + '</span></div>';
+
+      if (hyb) {
+        const c = hyb.checks || {};
+        const badge = (lbl, v) => '<span class="chip ' + (v === 'PASS' ? 'green' : 'amber') + '" style="margin-right:6px;">' + esc(lbl) + ': ' + esc(v) + '</span>';
+        root.querySelector('#pta-checks').innerHTML =
+          (mf ? '<span class="chip" style="background:#f3e8ff;color:#6d28d9;margin-right:6px;">Manual Override Active</span>' : '<span class="chip blue" style="margin-right:6px;">Viewing: ' + esc(chosen ? chosen.badge : activePtaMethod) + '</span>') +
+          badge('Plateau', c.plateau) + badge('Horner R²', c.horner) + badge('Duration', c.duration) +
+          badge('Smoothing (L=0.10..0.20)', c.smoothing) + badge('Intersection', c.intersection);
+        root.querySelector('#pta-win-summary').textContent =
+          'Slope=' + fmt(hyb.log_log_slope, 3) + ' · CV=' + fmt(hyb.deriv_cv_pct, 1) + '% · Smooth Drift=' + fmt(hyb.smooth_drift_pct, 2) + '% · Qo=' + fmt(hyb.qo_stbd, 1) + ' STB/d';
+      }
+
+      // Regime Triage & Hidden-IARF Guidance Banner
+      const regBar = root.querySelector('#pta-regime-banner');
+      if (regBar && adv && adv.available) {
+        const isWarn = adv.regime_status !== 'CLEAR_IARF';
+        regBar.style.display = 'block';
+        regBar.style.borderLeftColor = adv.regime_status === 'NO_CLEAR_IARF' ? '#db3737' : (isWarn ? '#d9822b' : '#0f9960');
+        regBar.innerHTML =
+          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">' +
+            '<div><span class="chip ' + (adv.regime_status === 'CLEAR_IARF' ? 'green' : 'amber') + '" style="margin-right:8px;">' + esc(adv.regime_label) + '</span>' +
+            '<strong>Recommended:</strong> ' + esc(adv.recommended_method) + '</div>' +
+            (an ? '<span class="small-muted" style="font-family:var(--mono);">WBS C=' + fmt(an.c_bbl_psi, 4) + ' bbl/psi · r_e=' + fmt(an.re_ft, 0) + ' ft (' + fmt(an.drainage_area_acres, 0) + ' ac) · P\'_r=' + fmt(an.radial_deriv_asymptote_psi, 1) + ' psi</span>' : '') +
+          '</div>' +
+          '<div class="small-muted" style="color:#394b59;line-height:1.45;">' + esc(adv.guidance) + '</div>';
+      } else if (regBar) {
+        regBar.style.display = 'none';
+      }
+
+      // 1. Log-Log Diagnostic Plot — shows ONLY the active selected methodology cleanly!
+      const ser = d.series || {};
+      const dt = ser.dt_hr || [], dp = ser.dp_psi || [], der = ser.derivative_psi || [];
+      const hLo = winActive ? winActive[0] : null, hHi = winActive ? winActive[1] : null;
+      const dpPts = [], derPts = [], winPts = [];
+      let dtMinP = Infinity, dtMaxP = 0;
+      for (let i = 0; i < dt.length; i++) {
+        const x = dt[i];
+        if (!(x > 0)) continue;
+        if (x < dtMinP) dtMinP = x;
+        if (x > dtMaxP) dtMaxP = x;
+        if (dp[i] > 0) dpPts.push({ x, y: dp[i] });
+        if (der[i] > 0) {
+          if (hLo != null && x >= hLo && x <= hHi) winPts.push({ x, y: der[i] });
+          else derPts.push({ x, y: der[i] });
+        }
+      }
+      const logSub = root.querySelector('#pta-loglog-sub');
+      const logDatasets = [
+        { label: 'ΔP (psi)', data: dpPts, borderColor: '#2d72d2', backgroundColor: '#2d72d2', pointRadius: 2.6 }
+      ];
+      let xLogTitle = 'Shut-in Time Δt (hours)';
+
+      if (mf) {
+        logDatasets.push({ label: 'Bourdet Derivative P\' (psi)', data: derPts, borderColor: '#d9822b', backgroundColor: '#d9822b', pointRadius: 2.6 });
+        logDatasets.push({ label: 'Manual 2-Point IARF', data: winPts, borderColor: '#5b21b6', backgroundColor: '#7c3aed', borderWidth: 1.5, pointRadius: 5.0 });
+        if (logSub) logSub.textContent = 'Showing: Engineer Manual 2-Point Fit';
+      } else if (activePtaMethod === 'stehfest_analytical' && an) {
+        logDatasets.push({ label: 'Bourdet Derivative P\' (psi)', data: derPts.concat(winPts), borderColor: '#d9822b', backgroundColor: '#d9822b', pointRadius: 2.6 });
+        logDatasets.push({ label: 'Stehfest Model ΔP (MAPE ' + fmt(an.dp_mape_pct, 1) + '%)', data: an.curve_dp || [], showLine: true, borderColor: 'rgba(219,55,55,0.75)', borderWidth: 1.9, pointRadius: 0 });
+        logDatasets.push({ label: 'Stehfest Model P\' (MAPE ' + fmt(an.deriv_mape_pct, 1) + '%)', data: an.curve_der || [], showLine: true, borderColor: '#db3737', borderWidth: 2.3, pointRadius: 0 });
+        if (logSub) logSub.textContent = 'Showing: Stehfest 12-Term Analytical Type-Curve Match';
+      } else if (activePtaMethod === 'von_schroeter_deconv' && dc) {
+        logDatasets.push({ label: 'Raw Bourdet P\' (psi)', data: derPts.concat(winPts), borderColor: 'rgba(217,130,43,0.45)', backgroundColor: 'rgba(217,130,43,0.45)', pointRadius: 2.2 });
+        logDatasets.push({ label: 'von Schroeter Deconv P\'_eq (to ' + fmt(dc.horizon_hr, 0) + 'h)', data: dc.curve_der || [], showLine: true, borderColor: '#0284c7', borderWidth: 2.3, pointRadius: 0 });
+        logDatasets.push({ label: 'Deconvolved Drawdown ΔP_eq', data: dc.curve_dp || [], showLine: true, borderColor: 'rgba(2,132,199,0.55)', borderDash: [4, 3], borderWidth: 1.6, pointRadius: 0 });
+        if (logSub) logSub.textContent = 'Showing: von Schroeter VFM-Coupled Deconvolution (SPE-77688)';
+      } else if (activePtaMethod === 'ilk_bspline_deconv' && ilk) {
+        logDatasets.push({ label: 'Raw Bourdet P\' (psi)', data: derPts.concat(winPts), borderColor: 'rgba(217,130,43,0.45)', backgroundColor: 'rgba(217,130,43,0.45)', pointRadius: 2.2 });
+        logDatasets.push({ label: 'Ilk B-Spline Deconv P\'_eq (to ' + fmt(ilk.horizon_hr, 0) + 'h)', data: ilk.curve_der || [], showLine: true, borderColor: '#7c3aed', borderWidth: 2.3, pointRadius: 0 });
+        logDatasets.push({ label: 'B-Spline Drawdown ΔP_eq', data: ilk.curve_dp || [], showLine: true, borderColor: 'rgba(124,58,237,0.55)', borderDash: [4, 3], borderWidth: 1.6, pointRadius: 0 });
+        if (logSub) logSub.textContent = 'Showing: Ilk–Valkó–Blasingame Convex B-Spline Deconvolution (SPE-102869)';
+      } else if (activePtaMethod === 'agarwal_equiv' && ag) {
+        const agAll = ag.curve_der || [];
+        const agIn = ag.win_hr ? agAll.filter(p => p.x >= ag.win_hr[0] && p.x <= ag.win_hr[1]) : [];
+        const agOut = ag.win_hr ? agAll.filter(p => p.x < ag.win_hr[0] || p.x > ag.win_hr[1]) : agAll;
+        logDatasets.push({ label: 'Agarwal Bourdet P\'(Δt_e)', data: agOut, borderColor: '#d9822b', backgroundColor: '#d9822b', pointRadius: 2.8 });
+        logDatasets.push({ label: 'Agarwal IARF Segment (Δt_e)', data: agIn, borderColor: '#065f46', backgroundColor: '#0f9960', borderWidth: 1.5, pointRadius: 5.0 });
+        xLogTitle = 'Agarwal Equivalent Time Δt_e = tp·Δt / (tp + Δt) (hours)';
+        if (logSub) logSub.textContent = 'Showing: Agarwal Equivalent-Time Bourdet Derivative (SPE-9289)';
+      } else if (activePtaMethod === 'blasingame_integral' && bl) {
+        logDatasets.push({ label: 'Raw Bourdet P\' (psi)', data: derPts.concat(winPts), borderColor: 'rgba(148,163,184,0.45)', backgroundColor: 'rgba(148,163,184,0.45)', pointRadius: 2.0 });
+        logDatasets.push({ label: 'Pressure Integral ΔP_i (psi)', data: bl.curve_dp || [], showLine: true, borderColor: 'rgba(45,114,210,0.65)', borderDash: [4, 3], borderWidth: 1.6, pointRadius: 0 });
+        logDatasets.push({ label: 'Blasingame Integral Deriv ΔP_id+ΔP_idd', data: bl.curve_der || [], showLine: true, borderColor: '#d9822b', borderWidth: 2.4, pointRadius: 0 });
+        if (logSub) logSub.textContent = 'Showing: Blasingame Noise-Immune Pressure Integral (SPE-19099)';
+      } else {
+        logDatasets.push({ label: 'Bourdet Derivative P\' (psi)', data: derPts, borderColor: '#d9822b', backgroundColor: '#d9822b', pointRadius: 2.6 });
+        logDatasets.push({ label: (chosen ? chosen.badge : 'IARF') + ' Segment', data: winPts, borderColor: '#065f46', backgroundColor: '#0f9960', borderWidth: 1.5, pointRadius: 4.8 });
+        if (logSub) logSub.textContent = 'Showing: ' + (chosen ? chosen.badge : activePtaMethod) + ' · Scroll/Drag axes to rescale';
+      }
+
+      // Draw exact horizontal True Radial Asymptote P'_r = m / 2.3026 for the currently selected method!
+      const pRadLine = mVal > 0 ? (mVal / 2.302585) : null;
+      if (pRadLine && isFinite(dtMinP) && dtMaxP > dtMinP) {
+        const xHiLine = (activePtaMethod === 'von_schroeter_deconv' && dc) ? dc.horizon_hr : ((activePtaMethod === 'ilk_bspline_deconv' && ilk) ? ilk.horizon_hr : dtMaxP);
+        logDatasets.push({
+          label: 'Radial Asymptote P\'_r (' + fmt(pRadLine, 1) + ' psi)',
+          data: [{ x: dtMinP, y: pRadLine }, { x: xHiLine, y: pRadLine }],
+          showLine: true, borderColor: 'rgba(15,153,96,0.80)', borderDash: [6, 4], borderWidth: 1.6, pointRadius: 0
+        });
+      }
+
+      const logPlugins = [makePtaPinPlugin('loglog')];
+      if (logZoomHandle) logPlugins.push(logZoomHandle.hoverPlugin);
+      logChart = chart(root.querySelector('#pta-loglog-canvas'), {
+        type: 'scatter',
+        data: { datasets: logDatasets },
+        plugins: logPlugins,
+        options: {
+          plugins: {
+            legend: { position: 'top', labels: { usePointStyle: true, font: { size: 10.5 }, boxWidth: 10 } },
+            tooltip: {
+              callbacks: {
+                label: ctx => ctx.dataset.label + ': t=' + fmt(ctx.parsed.x, 3) + ' hr, ' + fmt(ctx.parsed.y, 2) + ' psi'
+              }
+            }
+          },
+          scales: {
+            x: { type: 'logarithmic', title: { display: true, text: xLogTitle } },
+            y: { type: 'logarithmic', afterFit: s => { s.width = Math.max(s.width, 64); }, title: { display: true, text: 'ΔP and Derivative (psi)' } }
+          }
+        }
+      });
+
+      // 2. Horner Semilog Plot — dynamically fits & extrapolates straight line to p* at log10(H) = 0!
+      const hp = d.horner_plot || {};
+      const hPts = hp.points || [];
+      const hInWin = winActive ? hPts.filter(p => p.dt >= winActive[0] && p.dt <= winActive[1]) : [];
+      let fitLine = hp.fit_line || [];
+      let pStarShow = hp.p_star_psi;
+      if (mf && mf.p_star_psi != null && isFinite(mf.p_star_psi)) {
+        pStarShow = Number(mf.p_star_psi);
+      }
+      if (!mf && mVal > 0 && hPts.length >= 4) {
+        const anchorSet = hInWin.length >= 3 ? hInWin : hPts.slice(Math.floor(hPts.length * 0.45), Math.floor(hPts.length * 0.85));
+        if (anchorSet.length >= 2) {
+          const pStars = anchorSet.map(p => p.y + mVal * p.x).sort((a, b) => a - b);
+          pStarShow = (chosen && chosen.p_star) ? chosen.p_star : pStars[Math.floor(pStars.length / 2)];
+          const xHi = Math.min(Math.max(...anchorSet.map(p => p.x)) + 0.35, Math.max(...hPts.map(p => p.x)));
+          fitLine = [{ x: xHi, y: pStarShow - mVal * xHi }, { x: 0.0, y: pStarShow }];
+        }
+      } else if (mf && mVal > 0 && isFinite(pStarShow)) {
+        const xHi = fitLine.length ? Math.max(...fitLine.map(p => p.x)) : (hPts.length ? Math.max(...hPts.map(p => p.x)) : 3.0);
+        fitLine = [{ x: xHi, y: pStarShow - mVal * xHi }, { x: 0.0, y: pStarShow }];
+      }
+      const pStarPoint = (pStarShow != null && isFinite(pStarShow)) ? [{ x: 0.0, y: Number(pStarShow) }] : [];
+      const lineTag = mf ? 'MANUAL' : (chosen ? chosen.badge : 'HORNER');
+      root.querySelector('#pta-horner-sub').textContent =
+        '[' + lineTag + '] p* = ' + fmt(pStarShow, 1) + ' psia · m = ' + fmt(mVal, 2) + ' psi/cycle';
+
+      const pStarLabelPlugin = {
+        id: 'pStarLabel',
+        afterDatasetsDraw(ch) {
+          if (!pStarPoint.length) return;
+          const xScale = ch.scales.x, yScale = ch.scales.y, area = ch.chartArea;
+          if (!xScale || !yScale || !area) return;
+          const px = xScale.getPixelForValue(0.0);
+          const py = yScale.getPixelForValue(pStarPoint[0].y);
+          if (!isFinite(px) || !isFinite(py)) return;
+          const ctx = ch.ctx;
+          ctx.save();
+          // Subtle horizontal dotted reference line at Pws = p*
+          if (py >= area.top && py <= area.bottom) {
+            ctx.strokeStyle = 'rgba(219, 55, 55, 0.45)';
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(area.left, py);
+            ctx.lineTo(Math.min(px, area.right), py);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+          // Crisp pill badge showing p* = XXXX.X psia right next to (0, p*)
+          const label = 'p* = ' + fmt(pStarPoint[0].y, 1) + ' psia';
+          ctx.font = '700 11px Consolas, monospace';
+          const tw = ctx.measureText(label).width;
+          const bw = tw + 12, bh = 20;
+          const bx = Math.max(area.left + 4, Math.min(px - bw - 10, area.right - bw - 4));
+          const by = Math.max(area.top + 4, Math.min(py - bh / 2, area.bottom - bh - 4));
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+          ctx.strokeStyle = '#db3737';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.roundRect ? ctx.roundRect(bx, by, bw, bh, 4) : ctx.rect(bx, by, bw, bh);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#b91c1c';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, bx + 6, by + bh / 2);
+          ctx.restore();
+        }
+      };
+
+      const hornerPlugins = [makePtaPinPlugin('horner'), pStarLabelPlugin];
+      if (hornerZoomHandle) hornerPlugins.push(hornerZoomHandle.hoverPlugin);
+      hornerChart = chart(root.querySelector('#pta-horner-canvas'), {
+        type: 'scatter',
+        data: {
+          datasets: [
+            { label: 'Measured Pws (psia)', data: hPts, borderColor: '#8a9ba8', backgroundColor: '#8a9ba8', pointRadius: 2.5 },
+            { label: mf ? 'Manual Segment [P1–P2]' : 'Active Radial Segment', data: hInWin, borderColor: accentColor, backgroundColor: accentColor, pointRadius: 4.1 },
+            { label: lineTag + ' Straight-Line Fit', data: fitLine, showLine: true, borderColor: mf ? '#7c3aed' : '#db3737', borderDash: mf ? [] : [5, 3], borderWidth: 2.2, pointRadius: 0 },
+            { label: 'p* Extrapolated (' + fmt(pStarShow, 1) + ' psia)', data: pStarPoint, borderColor: '#b91c1c', backgroundColor: '#ef4444', pointStyle: 'star', pointRadius: 8, borderWidth: 2 }
+          ]
+        },
+        plugins: hornerPlugins,
+        options: {
+          plugins: {
+            legend: { position: 'top', labels: { usePointStyle: true, font: { size: 10.5 }, boxWidth: 10 } },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const raw = ctx.raw || {};
+                  if (ctx.datasetIndex === 3) {
+                    return 'Extrapolated Pressure p* (log10(H) = 0): ' + fmt(ctx.parsed.y, 1) + ' psia';
+                  }
+                  const dtTxt = raw.dt !== undefined ? (' (Δt=' + fmt(raw.dt, 3) + ' hr)') : '';
+                  return ctx.dataset.label + ': log10(H)=' + fmt(ctx.parsed.x, 3) + ', Pws=' + fmt(ctx.parsed.y, 1) + ' psia' + dtTxt;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { type: 'linear', reverse: true, min: 0, title: { display: true, text: 'log10((tp + Δt) / Δt)  [Time Increases Left → Right · p* at 0]' } },
+            y: { afterFit: s => { s.width = Math.max(s.width, 64); }, title: { display: true, text: 'Shut-in Bottomhole Pressure Pws (psia)' } }
+          }
+        }
+      });
+
+      // 2b. Oil Rate (Qo) Sensitivity Tornado & Root-Cause Diagnostics (synced live to active method!)
+      renderPTATornado(d, kVal, khVal, sVal, mVal);
+
+      // 3. Automated Reservoir Behaviour Interpretation Cards (dynamically synced to selected method!)
+      const it = d.interpretation || {};
+      const itag = root.querySelector('#pta-interp-tag');
+      if (itag) itag.textContent = mf ? 'Based on Engineer Manual 2-Point Fit' : ('Diagnosis (' + (chosen ? chosen.badge : 'Hybrid') + ')');
+      const permCls = kVal >= 150 ? 'High-Permeability Reservoir' : (kVal >= 50 ? 'Moderate-to-Good Permeability' : 'Moderate-Tight Formation');
+      const skinCls = sVal >= 3 ? 'Damaged Wellbore (Stimulation Candidate)' : (sVal >= 0.5 ? 'Mild Near-Wellbore Damage' : (sVal >= -1 ? 'Clean / Undamaged Wellbore' : 'Stimulated / Enhanced Near-Wellbore'));
+      root.querySelector('#pta-interp-grid').innerHTML =
+        '<div class="interp-card"><h4>Permeability: ' + esc(permCls) + '</h4><p>' + esc(chosen ? ('Selected ' + chosen.badge + ' estimates k = ' + fmt(kVal, 1) + ' mD (kh = ' + fmt(khVal, 0) + ' mD·ft, m = ' + fmt(mVal, 2) + ' psi/cycle).') : (it.permeability_summary || '—')) + '</p></div>' +
+        '<div class="interp-card" style="border-left-color:#0f9960;"><h4>Wellbore Condition: ' + esc(skinCls) + '</h4><p>' + esc('Apparent skin S = ' + (sVal >= 0 ? '+' : '') + fmt(sVal, 2) + ' (ΔP_skin = ' + fmt(dpVal, 1) + ' psi near-wellbore pressure drop).') + '</p></div>' +
+        '<div class="interp-card" style="border-left-color:#d9822b;"><h4>Flow Regime &amp; Boundary: ' + esc(it.boundary_class || (adv.regime_label || '—')) + '</h4><p>' + esc(it.boundary_summary || (adv.guidance || '—')) + '</p></div>' +
+        '<div class="interp-card" style="border-left-color:#634dbf;"><h4>Engineering Recommendation</h4><p>' + esc(it.recommendation || '—') + '</p></div>';
+
+      // 4. Complete Clickable Comparison Table (All 9+ Hidden-IARF & Deconvolution Methods!)
+      const mRows = [];
+      if (mf) {
+        mRows.push({ key: 'manual', hl: true, name: '★ Engineer Manual 2-Point Fit (' + (mf.fit_mode === 'interval_ols' ? 'Interval OLS' : 'Exact 2-Point') + ')', m: mf.m, k: mf.k, kh: mf.kh, s: mf.skin, dp: mf.dP_skin, win: '[' + fmt(mf.win_hr[0], 2) + ' – ' + fmt(mf.win_hr[1], 2) + ' h] · R²=' + fmt(mf.r2_horner, 4) });
+      }
+      if (hyb) mRows.push({ key: 'hybrid_intersection', hl: !mf && activePtaMethod === 'hybrid_intersection', name: '★ Hybrid L3: Intersection Ensemble (Horner ∩ Bourdet)', m: l3.m, k: l3.k, kh: l3.kh, s: l3.skin, dp: l3.dP_skin, win: '[' + fmt(l3.win_hr[0], 2) + ' – ' + fmt(l3.win_hr[1], 2) + ' h]' });
+      if (an) mRows.push({ key: 'stehfest_analytical', hl: !mf && activePtaMethod === 'stehfest_analytical', name: '★ Stehfest 12-Term Analytical Match (WBS + Skin + Boundary, SPE-12777)', m: an.m, k: an.k, kh: an.kh, s: an.skin, dp: an.dP_skin, win: 'C=' + fmt(an.c_bbl_psi, 4) + ' · r_e=' + fmt(an.re_ft, 0) + 'ft · der MAPE ' + fmt(an.deriv_mape_pct, 1) + '% (±' + fmt(an.k_std_pct, 1) + '%)' });
+      if (dc) mRows.push({ key: 'von_schroeter_deconv', hl: !mf && activePtaMethod === 'von_schroeter_deconv', name: '★ von Schroeter Nonlinear Deconvolution (VFM-Coupled, SPE-77688)', m: dc.m, k: dc.k, kh: dc.kh, s: dc.skin, dp: dc.dP_skin, win: 'Extended ' + fmt(dc.horizon_hr, 0) + 'h horizon · BU RMSE ' + fmt(dc.bu_fit_rmse_psi, 1) + ' psi' });
+      if (ilk) mRows.push({ key: 'ilk_bspline_deconv', hl: !mf && activePtaMethod === 'ilk_bspline_deconv', name: '★ Ilk–Valkó–Blasingame Convex B-Spline Deconvolution (SPE-102869)', m: ilk.m, k: ilk.k, kh: ilk.kh, s: ilk.skin, dp: ilk.dP_skin, win: 'Extended ' + fmt(ilk.horizon_hr, 0) + 'h · ' + ilk.n_basis + ' B-splines · RMSE ' + fmt(ilk.bu_fit_rmse_psi, 1) + ' psi' });
+      if (ag) mRows.push({ key: 'agarwal_equiv', hl: !mf && activePtaMethod === 'agarwal_equiv', name: '★ Agarwal Equivalent-Time Bourdet & Semilog (SPE-9289)', m: ag.m, k: ag.k, kh: ag.kh, s: ag.skin, dp: ag.dP_skin, win: 'Δt_e [' + fmt(ag.win_hr[0], 2) + ' – ' + fmt(ag.win_hr[1], 2) + ' h] · R²=' + fmt(ag.r2_semilog, 4) });
+      if (bl) mRows.push({ key: 'blasingame_integral', hl: !mf && activePtaMethod === 'blasingame_integral', name: '★ Blasingame Pressure-Integral Derivative ΔP_id (Noise-Immune, SPE-19099)', m: bl.m, k: bl.k, kh: bl.kh, s: bl.skin, dp: bl.dP_skin, win: '[' + fmt(bl.win_hr[0], 2) + ' – ' + fmt(bl.win_hr[1], 2) + ' h] · P\'_r=' + fmt(bl.radial_deriv_asymptote_psi, 1) + ' psi' });
+      if (oj) mRows.push({ key: 'odeh_jones_multirate', hl: !mf && activePtaMethod === 'odeh_jones_multirate', name: '★ Odeh–Jones Multi-Rate Superposition (VFM Steps, SPE-1082)', m: oj.m, k: oj.k, kh: oj.kh, s: oj.skin, dp: oj.dP_skin, win: oj.n_rate_steps + ' VFM steps · R²=' + fmt(oj.r2_superpos, 4) });
+      if (td) mRows.push({ key: 'tiab_tds', hl: !mf && activePtaMethod === 'tiab_tds', name: 'Tiab Direct Synthesis — TDS (SPE-26138)', m: td.m, k: td.k, kh: td.kh, s: td.skin, dp: td.dP_skin, win: 'C=' + fmt(td.c_bbl_psi, 4) + ' · t_peak=' + fmt(td.t_peak_hr, 3) + 'h' });
+      if (mdh) mRows.push({ key: 'mdh_muskat', hl: !mf && activePtaMethod === 'mdh_muskat', name: 'MDH Semilog + Muskat Bounded Extrapolation (SPE-950)', m: mdh.m, k: mdh.k, kh: mdh.kh, s: mdh.skin, dp: mdh.dP_skin, win: 'p̄_Muskat=' + fmt(mdh.p_bar_muskat_psia, 1) + ' psia · R²=' + fmt(mdh.muskat_r2, 4) });
+      if (hyb) {
+        mRows.push({ key: 'hybrid_horner', hl: !mf && activePtaMethod === 'hybrid_horner', name: 'Hybrid L1: Pure Horner (Theil-Sen + PELT)', m: l1.m, k: l1.k, kh: l1.kh, s: l1.skin, dp: l1.dP_skin, win: '[' + fmt(l1.win_hr[0], 2) + ' – ' + fmt(l1.win_hr[1], 2) + ' h]' });
+        mRows.push({ key: 'hybrid_bourdet', hl: !mf && activePtaMethod === 'hybrid_bourdet', name: 'Hybrid L2: Bourdet Derivative (L=0.15 + PELT)', m: l2.m, k: l2.k, kh: l2.kh, s: l2.skin, dp: l2.dP_skin, win: '[' + fmt(l2.win_hr[0], 2) + ' – ' + fmt(l2.win_hr[1], 2) + ' h]' });
+      }
+      mRows.push({ key: '', hl: false, name: 'Legacy Derivative Kernel', m: res.semilog_slope_psi_per_cycle, k: res.k_md, kh: res.kh_md_ft, s: res.apparent_skin, dp: res.skin_pressure_drop_psi, win: d.status });
+
+      const mtbody = root.querySelector('#pta-methods-body');
+      mtbody.innerHTML = mRows.map(r =>
+        '<tr class="' + (r.hl ? 'highlight' : '') + '" ' + (r.key && r.key !== 'manual' ? ('data-ptam="' + esc(r.key) + '" style="cursor:pointer;" title="Click to display ' + esc(r.name) + '"') : '') + '>' +
+          '<td><strong>' + esc(r.name) + '</strong></td>' +
+          '<td class="num">' + fmt(r.m, 2) + '</td><td class="num">' + fmt(r.k, 2) + '</td>' +
+          '<td class="num">' + fmt(r.kh, 0) + '</td><td class="num">' + fmt(r.s, 3) + '</td>' +
+          '<td class="num">' + fmt(r.dp, 1) + '</td><td>' + esc(r.win) + '</td>' +
+        '</tr>'
+      ).join('');
+      mtbody.querySelectorAll('tr[data-ptam]').forEach(tr => {
+        tr.addEventListener('click', () => {
+          activePtaMethod = tr.getAttribute('data-ptam');
+          manualViewActive = false;
+          const s = root.querySelector('#pta-src-sel');
+          if (s) s.value = activePtaMethod;
+          renderPTA(ptaData);
+        });
+      });
+    }
+
+    function renderPTATornado(d, activeK, activeKh, activeS, activeM) {
+      const card = root.querySelector('#pta-tornado-card');
+      const qs = d && d.qo_sensitivity;
+      if (!card) return;
+      if (!qs || !qs.available || !qs.base) {
+        card.style.display = 'none';
+        return;
+      }
+      card.style.display = 'block';
+      const b = qs.base;
+      const qoBase = Number(b.qo_stbd);
+      const tpBase = Number(b.tp_hr) || Number((d.horner_plot || {}).tp_hr) || 1000.0;
+      const kBase = (activeK && isFinite(activeK) && activeK > 0) ? Number(activeK) : Number(b.k_md);
+      const sBase = (activeS !== null && activeS !== undefined && isFinite(activeS)) ? Number(activeS) : Number(b.skin);
+      const mBase = (activeM && isFinite(activeM) && activeM > 0) ? Number(activeM) : Number(b.m_psi_cyc);
+      const pStarBase = Number((d.horner_plot || {}).p_star_psi) || Number(b.p_star_psia);
+      const pwf0 = Number(b.pwf0_psia);
+      const bo = Number(b.bo), muO = Number(b.mu_o), hFt = Number(b.h_ft), phi = Number(b.phi), ct = Number(b.ct), rw = Number(b.rw_ft);
+      const dpsBase = 0.869 * mBase * sBase;
+
+      const pct = Number(tornadoQoPct) || 20;
+      const frac = pct / 100.0;
+      const qoLo = qoBase * (1.0 - frac);
+      const qoHi = qoBase * (1.0 + frac);
+
+      // Extract active radial-window measured buildup points (dt, Pws) for exact coupled Horner refit
+      const hpPts = (d.horner_plot && d.horner_plot.points) ? d.horner_plot.points : [];
+      const winHr = (d.horner_plot && d.horner_plot.win_hr) || (d.hybrid_pta && d.hybrid_pta.intersect_win_hr) || null;
+      let winPts = (winHr && winHr.length === 2)
+        ? hpPts.filter(p => p.dt >= winHr[0] && p.dt <= winHr[1] && p.dt > 0 && isFinite(p.y))
+        : [];
+      if (winPts.length < 3 && hpPts.length >= 4) {
+        winPts = hpPts.slice(Math.floor(hpPts.length * 0.40), Math.floor(hpPts.length * 0.85)).filter(p => p.dt > 0 && isFinite(p.y));
+      }
+
+      // Exact coupled Horner evaluation at perturbed Qo:
+      // 1) tp(Qo) = 24 * Np / Qo = tpBase * (qoBase / qoNew) shifts Horner coordinate log10((tp + dt)/dt)
+      // 2) Refit Horner slope m(tp) and p*(tp) on the radial-window buildup points
+      // 3) Evaluate k(Qo, m), S(Qo, m, p1hr, k), and dP_skin = 0.869 * m * S
+      const evalCoupled = (qoNew) => {
+        const tpNew = Math.max(tpBase * (qoBase / Math.max(qoNew, 1e-6)), 1.0);
+        let mNew = mBase;
+        let pStarNew = pStarBase;
+        if (winPts.length >= 3) {
+          let sumXb = 0, sumXn = 0, sumY = 0;
+          const xb = [], xn = [], yv = [];
+          for (let i = 0; i < winPts.length; i++) {
+            const dt = winPts[i].dt, y = winPts[i].y;
+            const bX = Math.log10((tpBase + dt) / dt);
+            const nX = Math.log10((tpNew + dt) / dt);
+            xb.push(bX); xn.push(nX); yv.push(y);
+            sumXb += bX; sumXn += nX; sumY += y;
+          }
+          const n = winPts.length;
+          const mXb = sumXb / n, mXn = sumXn / n, mY = sumY / n;
+          let varB = 0, covB = 0, varN = 0, covN = 0;
+          for (let i = 0; i < n; i++) {
+            varB += (xb[i] - mXb) * (xb[i] - mXb);
+            covB += (xb[i] - mXb) * (yv[i] - mY);
+            varN += (xn[i] - mXn) * (xn[i] - mXn);
+            covN += (xn[i] - mXn) * (yv[i] - mY);
+          }
+          if (varB > 1e-12 && varN > 1e-12) {
+            const mOlsB = -covB / varB, mOlsN = -covN / varN;
+            const psOlsB = mY + mOlsB * mXb, psOlsN = mY + mOlsN * mXn;
+            if (mOlsB > 1e-6 && mOlsN > 1e-6) {
+              mNew = mBase * (mOlsN / mOlsB);
+              pStarNew = pStarBase + (psOlsN - psOlsB);
+            }
+          }
+        }
+        const kNew = kBase * (qoNew / qoBase) * (mBase / Math.max(mNew, 1e-6));
+        const p1hrBase = pStarBase - mBase * Math.log10((tpBase + 1.0) / 1.0);
+        const p1hrNew = pStarNew - mNew * Math.log10((tpNew + 1.0) / 1.0);
+        const sNew = sBase + 1.1513 * (
+          ((p1hrNew - pwf0) / Math.max(mNew, 1e-6)) - ((p1hrBase - pwf0) / Math.max(mBase, 1e-6))
+          - Math.log10(Math.max(kNew / Math.max(kBase, 1e-6), 1e-12))
+        );
+        const dpsNew = 0.869 * mNew * sNew;
+        return { tp: tpNew, m: mNew, pStar: pStarNew, k: kNew, s: sNew, dps: dpsNew };
+      };
+
+      const cLo = evalCoupled(qoLo);
+      const cHi = evalCoupled(qoHi);
+      const pctRel = (v, bVal, minD) => 100.0 * (v - bVal) / Math.max(Math.abs(bVal), minD);
+
+      const rows = [
+        {
+          key: 'k', label: 'Permeability k (mD)', unit: 'mD', dec: 1,
+          base: kBase, atLo: cLo.k, atHi: cHi.k,
+          dLo: cLo.k - kBase, dHi: cHi.k - kBase,
+          pLo: pctRel(cLo.k, kBase, 1e-6), pHi: pctRel(cHi.k, kBase, 1e-6),
+          law: 'k = 162.6·Qo·Bo·μo / (m(tp)·h) — direct linear Qo + coupled Horner slope m(tp(Qo))'
+        },
+        {
+          key: 'skin', label: 'Skin Factor S', unit: '', dec: 3,
+          base: sBase, atLo: cLo.s, atHi: cHi.s,
+          dLo: cLo.s - sBase, dHi: cHi.s - sBase,
+          pLo: pctRel(cLo.s, sBase, 0.25), pHi: pctRel(cHi.s, sBase, 0.25),
+          law: 'S(Qo, tp(Qo)) — coupled through k(Qo), Horner p1hr(tp), and refitted m(tp)'
+        },
+        {
+          key: 'dp_skin', label: 'Skin Pressure Drop ΔP_skin (psi)', unit: 'psi', dec: 2,
+          base: dpsBase, atLo: cLo.dps, atHi: cHi.dps,
+          dLo: cLo.dps - dpsBase, dHi: cHi.dps - dpsBase,
+          pLo: pctRel(cLo.dps, dpsBase, 1.0), pHi: pctRel(cHi.dps, dpsBase, 1.0),
+          law: 'ΔP_skin = 0.869·m(tp)·S(Qo, tp) — combines coupled m(tp) and Skin S shifts'
+        },
+        {
+          key: 'm', label: 'Horner Semilog Slope m (psi/cyc)', unit: 'psi/cyc', dec: 3,
+          base: mBase, atLo: cLo.m, atHi: cHi.m,
+          dLo: cLo.m - mBase, dHi: cHi.m - mBase,
+          pLo: pctRel(cLo.m, mBase, 1e-6), pHi: pctRel(cHi.m, mBase, 1e-6),
+          law: 'Refitted via tp = 24·Np/Qo (' + fmt(cHi.tp, 0) + '–' + fmt(cLo.tp, 0) + ' hr vs base ' + fmt(tpBase, 0) + ' hr) shifting log10((tp+Δt)/Δt)'
+        }
+      ];
+      // Sort Tornado widest % span at top -> narrowest at bottom
+      rows.sort((a, c) => (Math.abs(c.pHi - c.pLo) - Math.abs(a.pHi - a.pLo)));
+
+      // Update header & callout
+      const subEl = root.querySelector('#pta-tornado-sub');
+      if (subEl) subEl.textContent = 'Coupled Qo ±' + pct + '% (' + fmt(qoLo, 0) + '–' + fmt(qoHi, 0) + ' STB/d) → tp = 24·Np/Qo (' + fmt(cLo.tp, 0) + ' / ' + fmt(cHi.tp, 0) + ' hr) → Horner refit & all 4 PTA outputs';
+      const thLo = root.querySelector('#pta-th-qlo'), thHi = root.querySelector('#pta-th-qhi');
+      if (thLo) thLo.textContent = 'At Qo -' + pct + '% (tp=' + fmt(cLo.tp, 0) + 'h)';
+      if (thHi) thHi.textContent = 'At Qo +' + pct + '% (tp=' + fmt(cHi.tp, 0) + 'h)';
+
+      const diagEl = root.querySelector('#pta-tornado-diag');
+      diagEl.innerHTML =
+        '<strong>Coupled Qo ±' + pct + '% Uncertainty (' + esc(d.well_name) + ' · Base Qo = ' + fmt(qoBase, 1) + ' STB/d, Base tp = ' + fmt(tpBase, 0) + ' hr):</strong> ' +
+        'Tweaking Qo by <strong>±' + pct + '%</strong> shifts Horner producing time <strong>tp = 24·Np/Qo</strong> to <strong>' + fmt(cLo.tp, 0) + ' hr (-' + pct + '% Qo)</strong> / <strong>' + fmt(cHi.tp, 0) + ' hr (+' + pct + '% Qo)</strong>, ' +
+        'refitting <strong>Horner Slope m</strong> to <strong>' + fmt(cLo.m, 3) + '–' + fmt(cHi.m, 3) + ' psi/cyc</strong> (' + (pctRel(cLo.m, mBase, 1e-6) >= 0 ? '+' : '') + fmt(pctRel(cLo.m, mBase, 1e-6), 2) + '% / ' + (pctRel(cHi.m, mBase, 1e-6) >= 0 ? '+' : '') + fmt(pctRel(cHi.m, mBase, 1e-6), 2) + '%), ' +
+        '<strong>Permeability k</strong> to <strong>' + fmt(cLo.k, 1) + '–' + fmt(cHi.k, 1) + ' mD</strong>, ' +
+        '<strong>Skin S</strong> to <strong>' + (cLo.s >= 0 ? '+' : '') + fmt(cLo.s, 3) + ' / ' + (cHi.s >= 0 ? '+' : '') + fmt(cHi.s, 3) + '</strong>, and ' +
+        '<strong>ΔP_skin</strong> to <strong>' + fmt(cLo.dps, 1) + ' / ' + fmt(cHi.dps, 1) + ' psi</strong>.';
+
+      // Diverging horizontal Tornado chart centered at 0% Change
+      const maxAbsPct = Math.max(pct + 14, ...rows.map(r => Math.max(Math.abs(r.pLo), Math.abs(r.pHi)))) + 14;
+      const labels = rows.map(r => r.label);
+      const barAtQoLo = rows.map(r => [Math.min(0, r.pLo), Math.max(0, r.pLo)]);
+      const barAtQoHi = rows.map(r => [Math.min(0, r.pHi), Math.max(0, r.pHi)]);
+
+      const tornadoAnnotPlugin = {
+        id: 'ptaTornadoAnnot',
+        afterDatasetsDraw(ch) {
+          const xS = ch.scales.x, yS = ch.scales.y, ca = ch.chartArea;
+          if (!xS || !yS || !ca) return;
+          const x0 = xS.getPixelForValue(0);
+          const ctx = ch.ctx;
+          ctx.save();
+          // Vertical dashed 0% baseline
+          ctx.strokeStyle = '#10161a';
+          ctx.lineWidth = 1.8;
+          ctx.setLineDash([5, 3]);
+          ctx.beginPath();
+          ctx.moveTo(x0, ca.top);
+          ctx.lineTo(x0, ca.bottom);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#10161a';
+          ctx.font = '700 10.5px Consolas, monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('Base (0%)', x0, ca.top - 6);
+
+          // Inline value annotations at bar tips
+          ctx.font = '600 10.5px Consolas, monospace';
+          ctx.textBaseline = 'middle';
+          rows.forEach((r, idx) => {
+            const yPix = yS.getPixelForValue(idx);
+            if (Math.abs(r.pLo) < 0.005 && Math.abs(r.pHi) < 0.005) {
+              ctx.fillStyle = '#64748b';
+              ctx.textAlign = 'left';
+              ctx.fillText('≈0.00% (' + fmt(r.atLo, r.dec) + '–' + fmt(r.atHi, r.dec) + ' ' + r.unit + ')', x0 + 8, yPix);
+              return;
+            }
+            const leftVal = r.pLo < r.pHi ? r.pLo : r.pHi;
+            const rightVal = r.pLo < r.pHi ? r.pHi : r.pLo;
+            const leftAbs = r.pLo < r.pHi ? r.atLo : r.atHi;
+            const rightAbs = r.pLo < r.pHi ? r.atHi : r.atLo;
+            const xL = xS.getPixelForValue(leftVal);
+            const xR = xS.getPixelForValue(rightVal);
+            const pDec = Math.abs(rightVal - leftVal) < 1.0 ? 2 : 1;
+            ctx.fillStyle = '#1d4ed8';
+            ctx.textAlign = 'right';
+            ctx.fillText((leftVal >= 0 ? '+' : '') + fmt(leftVal, pDec) + '% (' + fmt(leftAbs, r.dec) + ')', xL - 6, yPix);
+            ctx.fillStyle = '#b91c1c';
+            ctx.textAlign = 'left';
+            ctx.fillText((rightVal >= 0 ? '+' : '') + fmt(rightVal, pDec) + '% (' + fmt(rightAbs, r.dec) + ')', xR + 6, yPix);
+          });
+          ctx.restore();
+        }
+      };
+
+      tornadoChart = chart(root.querySelector('#pta-tornado-canvas'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Qo -' + pct + '% (' + fmt(qoLo, 0) + ' STB/d)',
+              data: barAtQoLo,
+              backgroundColor: 'rgba(45, 114, 210, 0.88)',
+              borderColor: '#1d4ed8',
+              borderWidth: 1,
+              borderRadius: 3,
+              barPercentage: 0.62,
+              grouped: false
+            },
+            {
+              label: 'Qo +' + pct + '% (' + fmt(qoHi, 0) + ' STB/d)',
+              data: barAtQoHi,
+              backgroundColor: 'rgba(219, 55, 55, 0.86)',
+              borderColor: '#b91c1c',
+              borderWidth: 1,
+              borderRadius: 3,
+              barPercentage: 0.62,
+              grouped: false
+            }
+          ]
+        },
+        plugins: [tornadoAnnotPlugin],
+        options: {
+          indexAxis: 'y',
+          layout: { padding: { top: 20, left: 8, right: 16 } },
+          plugins: {
+            legend: { position: 'top', align: 'end', labels: { font: { size: 11.5 }, boxWidth: 13 } },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const r = rows[ctx.dataIndex];
+                  const isLo = ctx.datasetIndex === 0;
+                  const val = isLo ? r.atLo : r.atHi;
+                  const pChg = isLo ? r.pLo : r.pHi;
+                  const dAbs = isLo ? r.dLo : r.dHi;
+                  return ctx.dataset.label + ' → ' + r.label + ' = ' + fmt(val, r.dec) + ' ' + r.unit + ' (Δ ' + (dAbs >= 0 ? '+' : '') + fmt(dAbs, r.dec) + ', ' + (pChg >= 0 ? '+' : '') + fmt(pChg, 1) + '%)';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              min: -maxAbsPct,
+              max: maxAbsPct,
+              title: { display: true, text: '% Change in PTA Output Relative to Base Value (Centered at 0%)' },
+              ticks: { callback: v => (v > 0 ? '+' : '') + v + '%' },
+              grid: { color: '#edf2f7' }
+            },
+            y: {
+              ticks: { font: { size: 11.5, weight: '700' } },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+
+      // Exact 4-row numeric table (Permeability k, Skin S, ΔP_skin, Horner Slope m)
+      const tbody = root.querySelector('#pta-tornado-body');
+      tbody.innerHTML = rows.map(r =>
+        '<tr class="' + (r.key === 'k' ? 'highlight' : '') + '">' +
+          '<td><strong>' + esc(r.label) + '</strong></td>' +
+          '<td class="num"><strong>' + fmt(r.base, r.dec) + (r.unit ? ' ' + esc(r.unit) : '') + '</strong></td>' +
+          '<td class="num" style="color:#1d4ed8;">' + fmt(r.atLo, r.dec) + (r.unit ? ' ' + esc(r.unit) : '') + '</td>' +
+          '<td class="num" style="color:#b91c1c;">' + fmt(r.atHi, r.dec) + (r.unit ? ' ' + esc(r.unit) : '') + '</td>' +
+          '<td class="num">' + (r.dLo >= 0 ? '+' : '') + fmt(r.dLo, r.dec) + ' / ' + (r.dHi >= 0 ? '+' : '') + fmt(r.dHi, r.dec) + '</td>' +
+          '<td class="num"><strong>' + (r.pLo >= 0 ? '+' : '') + fmt(r.pLo, 1) + '% / ' + (r.pHi >= 0 ? '+' : '') + fmt(r.pHi, 1) + '%</strong></td>' +
+          '<td style="font-size:11.5px; color:#394b59;">' + esc(r.law) + '</td>' +
+        '</tr>'
+      ).join('');
+    }
+
+    registerTab({
+      id: 'pta',
+      title: 'PTA & Reservoir Behaviour',
+      order: 4,
+      render(c) { root = c; buildSkeleton(c); },
+      onShow() { refreshWellEvents(); },
+      onWellChange() { if (root && root.classList.contains('active')) refreshWellEvents(); }
+    });
+  })();
+
+  // Header Export Actions
+  document.getElementById('hdr-dl-vfm').addEventListener('click', () => {
+    window.location.href = '/api/export/vfm?model=' + encodeURIComponent(state.activeModel || 'synth_stacked_v2') + '&rate_type=alloc&format=xlsx';
+  });
+  document.getElementById('hdr-dl-pta').addEventListener('click', () => {
+    window.location.href = '/api/export/pta?source=hybrid_intersection&format=xlsx';
+  });
+  document.getElementById('hdr-dl-rep').addEventListener('click', () => {
+    window.location.href = '/api/export/report';
+  });
+
+  // Startup Polling
+  async function pollStartup() {
+    const banner = document.getElementById('startup-banner');
+    const stText = document.getElementById('startup-status-text');
+    const pill = document.getElementById('hdr-status-pill');
+    try {
+      const st = await api('/api/status');
+      if (st.error) {
+        banner.className = 'startup-banner error';
+        stText.textContent = 'Error: ' + st.error;
+        pill.textContent = 'Error';
+        return;
+      }
+      if (!st.ready) {
+        stText.textContent = 'Starting workbench: ' + (st.status || 'initializing') + '...';
+        pill.textContent = st.status || 'Starting...';
+        setTimeout(pollStartup, 1200);
+        return;
+      }
+      const [ov, mData] = await Promise.all([api('/api/overview'), api('/api/models')]);
+      state.overview = ov;
+      modelsData = mData;
+      state.currentWell = (ov.wells && ov.wells.length) ? ov.wells[0].well_name : null;
+      banner.classList.add('hidden');
+      pill.textContent = 'Ready · vfm_stacked_v2.pkl';
+      pill.classList.add('ready');
+      ['hdr-dl-vfm', 'hdr-dl-pta', 'hdr-dl-rep'].forEach(id => { document.getElementById(id).disabled = false; });
+      renderSidebar();
+      activateTab('monitoring');
+    } catch (err) {
+      stText.textContent = 'Waiting for server: ' + err.message;
+      setTimeout(pollStartup, 1500);
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', pollStartup);
+})();
+</script>
+<script src="/static/tab_monitoring.js?v=20261122c"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+{
+  "paths": {
+    "raw_data_dir": "../data/raw",
+    "high_freq_csv": "../data/raw/high_freq_data.csv",
+    "well_tests_csv": "../data/raw/well_tests.csv",
+    "choke_events_csv": "../data/raw/choke_events.csv",
+    "well_completion_csv": "../data/raw/well_completion.csv",
+    "reservoir_pvt_csv": "../data/raw/reservoir_pvt.csv",
+    "cache_dir": "data_cache",
+    "models_dir": "models",
+    "outputs_dir": "outputs",
+    "judgement_file": "outputs/engineer_judgement.json"
+  },
+  "schema": {
+    "_comment": "Map canonical column names to the names in your files, e.g. {\"high_freq\": {\"dh_pressure_psia\": \"PDG_P\"}}. Units must already match the canonical names (psia, degF, STB/d, Mscf/d, %).",
+    "high_freq": {},
+    "well_tests": {},
+    "choke_events": {},
+    "well_completion": {},
+    "reservoir_pvt": {}
+  },
+  "cleaning": {
+    "sentinel_values": [-999.25, -999.0],
+    "duplicate_policy": "keep_first",
+    "hampel_window_min": 15,
+    "hampel_n_sigma": 6.0,
+    "physical_bounds": {
+      "whp_psia": [0.0, 2000.0],
+      "whp_downstream_psia": [0.0, 1000.0],
+      "dh_pressure_psia": [100.0, 6000.0],
+      "dh_temperature_degf": [60.0, 350.0],
+      "annulus_pressure_psia": [0.0, 3000.0],
+      "gas_lift_rate_mscfd": [0.0, 3000.0]
+    }
+  },
+  "states": {
+    "choke_closed_pct_threshold": 0.5,
+    "dp_choke_shut_in_psi": 2.0,
+    "stabilization_buffer_min": 30
+  },
+  "well_tests": {
+    "sm3_per_mscf": 28.3168466,
+    "unit_mismatch_ratio_threshold": 15.0,
+    "min_steady_coverage": 0.70,
+    "rolling_feature_windows_min": [15, 60]
+  },
+  "assumptions": {
+    "wellhead_temp_degf": 120.0,
+    "choke_critical_pressure_ratio": 0.40,
+    "pr_gradient_prior_psi_ft": null
+  },
+  "modeling": {
+    "random_state": 42,
+    "time_split_cutoff": "2025-07-01",
+    "reference_timestamp": "2025-01-01T00:00:00Z",
+    "wc_model": "logit",
+    "wc_logit_lambda": 20000.0,
+    "ewma_fast_min": 30.0,
+    "ewma_slow_min": 180.0,
+    "whp_transient_psi": 15.0,
+    "dhp_transient_psi": 20.0,
+    "transient_window_hr": 24.0
+  },
+  "pta": {
+    "min_shut_in_hr": 2.0,
+    "pre_shut_in_context_days": 5,
+    "rate_source": "vfm_daily",
+    "rate_basis": "oil",
+    "prepend_cumulative_history": true,
+    "points_per_cycle": 20,
+    "smoothing_L10": 0.1,
+    "dietz_shape_factor": 31.62,
+    "cumulative_oil_column": "cum_oil_at_2025_01_01_stb",
+    "cumulative_oil_date": "2025-01-01T00:00:00Z"
+  },
+  "coupling": {
+    "enabled": false,
+    "apply_pressure_default": true,
+    "apply_skin_default": true,
+    "apply_kh_default": false,
+    "min_j_multiplier": 0.25,
+    "max_j_multiplier": 4.0
+  },
+  "dashboard": {
+    "host": "127.0.0.1",
+    "port": 8765
+  }
+}

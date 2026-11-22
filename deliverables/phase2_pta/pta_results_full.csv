@@ -1,0 +1,7 @@
+event_id,well_name,shut_in_time,shut_in_duration_hr,q_oil_vfm_stbd,tp_hr,pwf_psia,iarf_window_hr,horner_slope_m_psi_per_cycle,permeability_k_md,skin_S,delta_p_skin_psi,p_star_psia,horner_r2,stehfest_k_md,stehfest_skin,stehfest_C_bbl_psi,regime_status
+GL-01_20250415_0800,GL-01,2025-04-15 08:00:00,72.0,974.65,247912.7,3240.05,2.06-5.91,23.19,104.44,5.816,117.34,3606.14,0.99946,104.29,5.799,0.02285,Boundary-Masked / Short IARF Transition
+GL-02_20250308_1423,GL-02,2025-03-08 14:23:00,5.65,1279.27,220270.7,2883.04,1.27-3.65,53.374,55.65,-0.585,-27.17,3410.31,0.99994,59.41,-0.334,0.01742,Boundary-Masked / Short IARF Transition
+GL-04_20250603_0800,GL-04,2025-06-03 08:00:00,48.0,806.82,137608.3,2307.3,12.72-36.54,145.585,55.18,-1.277,-161.75,3648.85,0.99995,57.6,-0.986,0.0297,Boundary-Masked / Short IARF Transition
+GL-06_20250722_0311,GL-06,2025-07-22 03:11:00,8.0,683.14,178236.7,2679.9,2.27-6.50,15.008,297.82,1.983,25.89,2864.73,0.99997,309.59,2.099,0.01841,Boundary-Masked / Short IARF Transition
+GL-08_20250819_0900,GL-08,2025-08-19 09:00:00,72.0,1460.35,87552.7,2636.57,2.27-59.04,93.165,42.85,-1.643,-133.18,3446.14,0.99999,43.03,-1.727,0.01146,Clean Infinite-Acting Radial Flow
+GL-10_20250527_2104,GL-10,2025-05-27 21:04:00,9.0,1762.15,215588.5,3686.03,0.96-2.74,28.834,176.2,2.016,50.57,4042.43,0.99966,182.4,2.09,0.02401,Boundary-Masked / Short IARF Transition

@@ -1,0 +1,25 @@
+table,issue,rows_affected,detail
+well_tests,negative rate -> sign flipped,1,GL-06 2025-08-18 water_rate_stbd=-572.2
+well_tests,negative rate -> sign flipped,1,GL-08 2025-09-24 gas_rate_mscfd=-479.5
+well_tests,negative rate -> sign flipped,1,GL-06 2025-06-18 gas_lift_rate_mscfd=-717.5
+well_tests,negative rate -> sign flipped,1,GL-09 2025-07-27 gas_lift_rate_mscfd=-1010.5
+well_tests,negative rate -> sign flipped,1,GL-04 2025-07-12 total_gas_rate_mscfd=-1753.5
+well_tests,gas in Sm3/d -> converted to Mscf/d (/28.3168),1,GL-06 2025-01-18
+well_tests,gas in Sm3/d -> converted to Mscf/d (/28.3168),1,GL-06 2025-02-14
+well_tests,gas in Sm3/d -> converted to Mscf/d (/28.3168),1,GL-06 2025-03-18
+well_tests,gas in Sm3/d -> converted to Mscf/d (/28.3168),1,GL-06 2025-04-17
+well_tests,gas in Sm3/d -> converted to Mscf/d (/28.3168),1,GL-06 2025-05-18
+well_tests,gas in Sm3/d -> converted to Mscf/d (/28.3168),1,GL-06 2025-06-18
+well_tests,gas in Sm3/d -> converted to Mscf/d (/28.3168),1,GL-06 2025-07-19
+well_tests,gas in Sm3/d -> converted to Mscf/d (/28.3168),1,GL-06 2025-08-18
+well_tests,gas in Sm3/d -> converted to Mscf/d (/28.3168),1,GL-06 2025-09-17
+high_freq,raw 1-min rows audited,3917073,10 wells (2025-01-01 to 2025-09-30)
+high_freq,"duplicate (well, timestamp) rows removed",2513,
+high_freq,sentinel (-999.25) -> NaN,1345,whp_psia
+high_freq,sentinel (-999.25) -> NaN,905,whp_downstream_psia
+high_freq,outside physical limits -> NaN,2,whp_downstream_psia
+high_freq,sentinel (-999.25) -> NaN,1406,dh_pressure_psia
+high_freq,sentinel (-999.25) -> NaN,1190,dh_temperature_degf
+high_freq,sentinel (-999.25) -> NaN,1013,annulus_pressure_psia
+high_freq,sentinel (-999.25) -> NaN,1559,gas_lift_rate_mscfd
+high_freq,full-day SCADA telemetry outage imputed via hourly grid,1,GL-06 2025-06-24

@@ -1,0 +1,403 @@
+{
+ "status": "ready",
+ "config": "C:\\Users\\UFAZ\\Downloads\\Media-20261121T063614Z-1-001\\Media\\vfm_project\\configs\\default.json",
+ "period": [
+  "2025-01-01T00:00:00+00:00",
+  "2025-09-30T00:00:00+00:00"
+ ],
+ "settings": {
+  "enabled": true,
+  "min_j_multiplier": 0.25,
+  "max_j_multiplier": 4.0,
+  "decisions": {
+   "GL-01@2025-04-15T08:00": {
+    "use": false,
+    "apply_pressure": false,
+    "pressure_choice": "p_last",
+    "manual_pr_datum_psia": null,
+    "apply_skin": false,
+    "skin_override": null,
+    "apply_kh": false,
+    "kh_override": null,
+    "apply_pi": false,
+    "pi_choice": "actual",
+    "pi_override": null,
+    "note": ""
+   },
+   "GL-02@2025-03-08T14:23": {
+    "use": false,
+    "apply_pressure": false,
+    "pressure_choice": "p_last",
+    "manual_pr_datum_psia": null,
+    "apply_skin": false,
+    "skin_override": null,
+    "apply_kh": false,
+    "kh_override": null,
+    "apply_pi": false,
+    "pi_choice": "actual",
+    "pi_override": null,
+    "note": ""
+   },
+   "GL-04@2025-06-03T08:00": {
+    "use": false,
+    "apply_pressure": false,
+    "pressure_choice": "p_last",
+    "manual_pr_datum_psia": null,
+    "apply_skin": false,
+    "skin_override": null,
+    "apply_kh": false,
+    "kh_override": null,
+    "apply_pi": false,
+    "pi_choice": "actual",
+    "pi_override": null,
+    "note": ""
+   },
+   "GL-06@2025-07-22T03:11": {
+    "use": true,
+    "apply_pressure": true,
+    "pressure_choice": "dietz",
+    "manual_pr_datum_psia": null,
+    "apply_skin": true,
+    "skin_override": null,
+    "apply_kh": false,
+    "kh_override": null,
+    "apply_pi": false,
+    "pi_choice": "actual",
+    "pi_override": null,
+    "note": ""
+   },
+   "GL-08@2025-08-19T09:00": {
+    "use": true,
+    "apply_pressure": true,
+    "pressure_choice": "dietz",
+    "manual_pr_datum_psia": null,
+    "apply_skin": true,
+    "skin_override": null,
+    "apply_kh": false,
+    "kh_override": null,
+    "apply_pi": true,
+    "pi_choice": "actual",
+    "pi_override": null,
+    "note": ""
+   },
+   "GL-10@2025-05-27T21:04": {
+    "use": false,
+    "apply_pressure": false,
+    "pressure_choice": "p_last",
+    "manual_pr_datum_psia": null,
+    "apply_skin": false,
+    "skin_override": null,
+    "apply_kh": false,
+    "kh_override": null,
+    "apply_pi": false,
+    "pi_choice": "actual",
+    "pi_override": null,
+    "note": ""
+   }
+  },
+  "property_changes": [],
+  "estimators": {}
+ },
+ "wells": [
+  {
+   "well_name": "GL-01",
+   "n_tests": 9,
+   "cum_oil_baseline_stb": 258409.35185346127,
+   "cum_oil_coupled_stb": 258409.35185346127,
+   "cum_oil_change_pct": 0.0,
+   "coupled": false,
+   "ipr_loto_mae_baseline": 43.194175332957585,
+   "ipr_loto_mae_coupled": 43.194175332957585,
+   "events": [
+    {
+     "event_id": "GL-01@2025-04-15T08:00",
+     "status": "NO_RADIAL",
+     "duration_hr": 72.0
+    }
+   ]
+  },
+  {
+   "well_name": "GL-02",
+   "n_tests": 8,
+   "cum_oil_baseline_stb": 334796.50807559,
+   "cum_oil_coupled_stb": 334796.50807559,
+   "cum_oil_change_pct": 0.0,
+   "coupled": false,
+   "ipr_loto_mae_baseline": 93.75807590875735,
+   "ipr_loto_mae_coupled": 93.75807590875735,
+   "events": [
+    {
+     "event_id": "GL-02@2025-03-08T14:23",
+     "status": "NO_RADIAL",
+     "duration_hr": 5.65
+    }
+   ]
+  },
+  {
+   "well_name": "GL-03",
+   "n_tests": 9,
+   "cum_oil_baseline_stb": 199420.4434437527,
+   "cum_oil_coupled_stb": 199420.4434437527,
+   "cum_oil_change_pct": 0.0,
+   "coupled": false,
+   "ipr_loto_mae_baseline": 31.61826955951465,
+   "ipr_loto_mae_coupled": 31.61826955951465,
+   "events": []
+  },
+  {
+   "well_name": "GL-04",
+   "n_tests": 9,
+   "cum_oil_baseline_stb": 203558.96015470132,
+   "cum_oil_coupled_stb": 203558.96015470132,
+   "cum_oil_change_pct": 0.0,
+   "coupled": false,
+   "ipr_loto_mae_baseline": 21.649470226050525,
+   "ipr_loto_mae_coupled": 21.649470226050525,
+   "events": [
+    {
+     "event_id": "GL-04@2025-06-03T08:00",
+     "status": "NO_RADIAL",
+     "duration_hr": 48.0
+    }
+   ]
+  },
+  {
+   "well_name": "GL-05",
+   "n_tests": 8,
+   "cum_oil_baseline_stb": 209477.65353834422,
+   "cum_oil_coupled_stb": 209477.65353834422,
+   "cum_oil_change_pct": 0.0,
+   "coupled": false,
+   "ipr_loto_mae_baseline": 13.853604162006235,
+   "ipr_loto_mae_coupled": 13.853604162006235,
+   "events": []
+  },
+  {
+   "well_name": "GL-06",
+   "n_tests": 9,
+   "cum_oil_baseline_stb": 196167.1893370652,
+   "cum_oil_coupled_stb": 196167.10839485744,
+   "cum_oil_change_pct": -4.1261848149343194e-05,
+   "coupled": true,
+   "ipr_loto_mae_baseline": 38.80072107392789,
+   "ipr_loto_mae_coupled": 38.70119359790616,
+   "events": [
+    {
+     "event_id": "GL-06@2025-07-22T03:11",
+     "status": "RADIAL",
+     "duration_hr": 8.0
+    }
+   ]
+  },
+  {
+   "well_name": "GL-07",
+   "n_tests": 9,
+   "cum_oil_baseline_stb": 1189319.248529031,
+   "cum_oil_coupled_stb": 1189319.248529031,
+   "cum_oil_change_pct": 0.0,
+   "coupled": false,
+   "ipr_loto_mae_baseline": 61.91872664866615,
+   "ipr_loto_mae_coupled": 61.91872664866615,
+   "events": []
+  },
+  {
+   "well_name": "GL-08",
+   "n_tests": 8,
+   "cum_oil_baseline_stb": 392365.5952954174,
+   "cum_oil_coupled_stb": 392266.58869819884,
+   "cum_oil_change_pct": -0.025233251438372406,
+   "coupled": true,
+   "ipr_loto_mae_baseline": 39.376380690153155,
+   "ipr_loto_mae_coupled": 34.81641175025891,
+   "events": [
+    {
+     "event_id": "GL-08@2025-08-19T09:00",
+     "status": "RADIAL",
+     "duration_hr": 72.0
+    }
+   ]
+  },
+  {
+   "well_name": "GL-09",
+   "n_tests": 9,
+   "cum_oil_baseline_stb": 344072.5504502186,
+   "cum_oil_coupled_stb": 344072.5504502186,
+   "cum_oil_change_pct": 0.0,
+   "coupled": false,
+   "ipr_loto_mae_baseline": 29.9298019967447,
+   "ipr_loto_mae_coupled": 29.9298019967447,
+   "events": []
+  },
+  {
+   "well_name": "GL-10",
+   "n_tests": 7,
+   "cum_oil_baseline_stb": 522194.49847449234,
+   "cum_oil_coupled_stb": 522194.49847449234,
+   "cum_oil_change_pct": 0.0,
+   "coupled": false,
+   "ipr_loto_mae_baseline": 72.86027384973879,
+   "ipr_loto_mae_coupled": 72.86027384973879,
+   "events": [
+    {
+     "event_id": "GL-10@2025-05-27T21:04",
+     "status": "NO_RADIAL",
+     "duration_hr": 9.0
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "event_id": "GL-01@2025-04-15T08:00",
+   "well_name": "GL-01",
+   "shut_in_start": "2025-04-15T08:00:00+00:00",
+   "duration_hr": 72.0,
+   "status": "NO_RADIAL",
+   "kh_md_ft": null,
+   "k_md": null,
+   "skin": null,
+   "p_star_gauge_psia": null,
+   "dietz_pbar_datum_psia": null,
+   "p_last_datum_psia": 3621.5924111433665,
+   "rate_source": "vfm_daily",
+   "use": false,
+   "apply_pressure": false,
+   "pressure_choice": "p_last",
+   "apply_skin": false,
+   "apply_kh": false,
+   "n_block_flags": 1
+  },
+  {
+   "event_id": "GL-02@2025-03-08T14:23",
+   "well_name": "GL-02",
+   "shut_in_start": "2025-03-08T14:23:00+00:00",
+   "duration_hr": 5.65,
+   "status": "NO_RADIAL",
+   "kh_md_ft": null,
+   "k_md": null,
+   "skin": null,
+   "p_star_gauge_psia": null,
+   "dietz_pbar_datum_psia": null,
+   "p_last_datum_psia": 3278.9468318348263,
+   "rate_source": "vfm_daily",
+   "use": false,
+   "apply_pressure": false,
+   "pressure_choice": "p_last",
+   "apply_skin": false,
+   "apply_kh": false,
+   "n_block_flags": 1
+  },
+  {
+   "event_id": "GL-04@2025-06-03T08:00",
+   "well_name": "GL-04",
+   "shut_in_start": "2025-06-03T08:00:00+00:00",
+   "duration_hr": 48.0,
+   "status": "NO_RADIAL",
+   "kh_md_ft": null,
+   "k_md": null,
+   "skin": null,
+   "p_star_gauge_psia": null,
+   "dietz_pbar_datum_psia": null,
+   "p_last_datum_psia": 3236.4239498088878,
+   "rate_source": "vfm_daily",
+   "use": false,
+   "apply_pressure": false,
+   "pressure_choice": "p_last",
+   "apply_skin": false,
+   "apply_kh": false,
+   "n_block_flags": 1
+  },
+  {
+   "event_id": "GL-06@2025-07-22T03:11",
+   "well_name": "GL-06",
+   "shut_in_start": "2025-07-22T03:11:00+00:00",
+   "duration_hr": 8.0,
+   "status": "RADIAL",
+   "kh_md_ft": 33826.70312170762,
+   "k_md": 497.45151649570033,
+   "skin": 1.571986389890674,
+   "p_star_gauge_psia": 2880.0355266114348,
+   "dietz_pbar_datum_psia": 2922.7802492211495,
+   "p_last_datum_psia": 2921.6484799599425,
+   "rate_source": "vfm_daily",
+   "use": true,
+   "apply_pressure": true,
+   "pressure_choice": "dietz",
+   "apply_skin": true,
+   "apply_kh": false,
+   "n_block_flags": 0
+  },
+  {
+   "event_id": "GL-08@2025-08-19T09:00",
+   "well_name": "GL-08",
+   "shut_in_start": "2025-08-19T09:00:00+00:00",
+   "duration_hr": 72.0,
+   "status": "RADIAL",
+   "kh_md_ft": 3454.44522788352,
+   "k_md": 53.145311198208,
+   "skin": -1.7742188890940593,
+   "p_star_gauge_psia": 3464.1901841314566,
+   "dietz_pbar_datum_psia": 3248.09824350081,
+   "p_last_datum_psia": 3215.9339959104514,
+   "rate_source": "vfm_daily",
+   "use": true,
+   "apply_pressure": true,
+   "pressure_choice": "dietz",
+   "apply_skin": true,
+   "apply_kh": false,
+   "n_block_flags": 0
+  },
+  {
+   "event_id": "GL-10@2025-05-27T21:04",
+   "well_name": "GL-10",
+   "shut_in_start": "2025-05-27T21:04:00+00:00",
+   "duration_hr": 9.0,
+   "status": "NO_RADIAL",
+   "kh_md_ft": null,
+   "k_md": null,
+   "skin": null,
+   "p_star_gauge_psia": null,
+   "dietz_pbar_datum_psia": null,
+   "p_last_datum_psia": 4006.3328949189745,
+   "rate_source": "vfm_daily",
+   "use": false,
+   "apply_pressure": false,
+   "pressure_choice": "p_last",
+   "apply_skin": false,
+   "apply_kh": false,
+   "n_block_flags": 1
+  }
+ ],
+ "notes": [
+  {
+   "well_name": "GL-06",
+   "event_id": "GL-06@2025-07-22T03:11",
+   "level": "INFO",
+   "message": "Pr anchor 2922.8 psia at datum (Dietz average pressure)."
+  },
+  {
+   "well_name": "GL-06",
+   "level": "INFO",
+   "message": "Reference condition skin=1.571986389890674, kh=None; no later change, J unchanged (needs a later PTA or engineer change)."
+  },
+  {
+   "well_name": "GL-08",
+   "event_id": "GL-08@2025-08-19T09:00",
+   "level": "INFO",
+   "message": "Pr anchor 3248.1 psia at datum (Dietz average pressure)."
+  },
+  {
+   "well_name": "GL-08",
+   "level": "INFO",
+   "message": "Reference condition skin=-1.7742188890940593, kh=None; no later change, J unchanged (needs a later PTA or engineer change)."
+  },
+  {
+   "well_name": "GL-08",
+   "event_id": "GL-08@2025-08-19T09:00",
+   "level": "INFO",
+   "message": "IPR J fixed to 3.427 STB/d/psi from PTA (actual; Dietz average pressure)."
+  }
+ ],
+ "field_pr_gradient_prior_psi_ft": 0.3923036936856492,
+ "judgement_file": "C:\\Users\\UFAZ\\Downloads\\Media-20261121T063614Z-1-001\\Media\\vfm_project\\outputs\\_samples_judgement.json"
+}

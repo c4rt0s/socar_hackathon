@@ -1,0 +1,115 @@
+{
+ "models": [
+  {
+   "name": "physics_wls",
+   "family": "physics",
+   "description": "PhysicsVFM: inverse-variance WLS of IPR, choke and VLP",
+   "causal": true,
+   "needs_history": false,
+   "pooled": false,
+   "status": "ready"
+  },
+  {
+   "name": "physics_ipr",
+   "family": "physics",
+   "description": "PhysicsVFM IPR estimator only",
+   "causal": true,
+   "needs_history": false,
+   "pooled": false,
+   "status": "not computed"
+  },
+  {
+   "name": "physics_choke",
+   "family": "physics",
+   "description": "PhysicsVFM CHOKE estimator only",
+   "causal": true,
+   "needs_history": false,
+   "pooled": false,
+   "status": "not computed"
+  },
+  {
+   "name": "physics_vlp",
+   "family": "physics",
+   "description": "PhysicsVFM VLP estimator only",
+   "causal": true,
+   "needs_history": false,
+   "pooled": false,
+   "status": "not computed"
+  },
+  {
+   "name": "hybrid_physics_gbm",
+   "family": "hybrid",
+   "description": "PhysicsVFM liquid x GBM correction factor (shrunk toward 1)",
+   "causal": true,
+   "needs_history": false,
+   "pooled": false,
+   "status": "not computed"
+  },
+  {
+   "name": "deconvolution",
+   "family": "convolution",
+   "description": "Pressure-rate deconvolution of the downhole gauge (radial + closed boundary), kh/skin from an accepted PTA or the IPR, scale-calibrated to past tests",
+   "causal": true,
+   "needs_history": true,
+   "pooled": false,
+   "status": "ready (86s)"
+  },
+  {
+   "name": "ridge",
+   "family": "regression/ML",
+   "description": "Ridge regression on relative choke/pressure features (pooled)",
+   "causal": true,
+   "needs_history": false,
+   "pooled": true,
+   "status": "not computed"
+  },
+  {
+   "name": "gbm",
+   "family": "regression/ML",
+   "description": "Gradient-boosted trees on relative features (pooled, numpy)",
+   "causal": true,
+   "needs_history": false,
+   "pooled": true,
+   "status": "ready (95s)"
+  },
+  {
+   "name": "rf",
+   "family": "regression/ML",
+   "description": "Random forest on relative features (pooled, numpy)",
+   "causal": true,
+   "needs_history": false,
+   "pooled": true,
+   "status": "not computed"
+  },
+  {
+   "name": "knn",
+   "family": "regression/ML",
+   "description": "k-nearest neighbours on relative features (pooled)",
+   "causal": true,
+   "needs_history": false,
+   "pooled": true,
+   "status": "not computed"
+  },
+  {
+   "name": "test_step",
+   "family": "test-based",
+   "description": "Last well test carried forward (no sensors except the choke for shut-ins)",
+   "causal": true,
+   "needs_history": false,
+   "pooled": false,
+   "status": "ready (2s)"
+  },
+  {
+   "name": "test_linear",
+   "family": "test-based",
+   "description": "Linear interpolation between well tests (hindcast, uses future tests)",
+   "causal": false,
+   "needs_history": false,
+   "pooled": false,
+   "status": "not computed"
+  }
+ ],
+ "active": "physics_wls",
+ "benchmark_summary": [],
+ "benchmark_status": "idle"
+}
