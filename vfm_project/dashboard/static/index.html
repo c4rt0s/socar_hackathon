@@ -169,8 +169,8 @@
       <span id="hdr-status-pill" class="hdr-pill">Connecting...</span>
     </div>
     <div class="topbar-right">
-      <button id="hdr-dl-vfm" type="button" class="hdr-btn" disabled>Export VFM (.xlsx)</button>
-      <button id="hdr-dl-pta" type="button" class="hdr-btn" disabled>Export PTA (.xlsx)</button>
+      <button id="hdr-dl-vfm" type="button" class="hdr-btn" disabled>Export VFM (.csv)</button>
+      <button id="hdr-dl-pta" type="button" class="hdr-btn" disabled>Export PTA (.csv)</button>
       <button id="hdr-dl-rep" type="button" class="hdr-btn primary" disabled>Engineering Report (.html)</button>
     </div>
   </header>
@@ -766,8 +766,8 @@
               '</div>' +
             '</div>' +
             '<div class="toolbar">' +
-              '<button type="button" id="vfm-dl-xlsx" class="btn primary">Download VFM .xlsx</button>' +
-              '<button type="button" id="vfm-dl-csv" class="btn">Download .csv</button>' +
+              '<button type="button" id="vfm-dl-csv" class="btn primary">Download VFM (.csv)</button>' +
+              '<button type="button" id="vfm-dl-xlsx" class="btn">Download .xlsx</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -2011,8 +2011,8 @@
               '</select>' +
               '<button type="button" id="pta-manual-reset" class="btn" style="display:none; color:#db3737; border-color:#f3bcbc;">Reset to Auto</button>' +
               '<button type="button" id="pta-zoom-reset" class="btn">Reset Axes</button>' +
-              '<button type="button" id="pta-dl-xlsx" class="btn primary">Download PTA .xlsx</button>' +
-              '<button type="button" id="pta-dl-csv" class="btn">Download .csv</button>' +
+              '<button type="button" id="pta-dl-csv" class="btn primary">Download PTA (.csv)</button>' +
+              '<button type="button" id="pta-dl-xlsx" class="btn">Download .xlsx</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -2811,10 +2811,10 @@
 
   // Header Export Actions
   document.getElementById('hdr-dl-vfm').addEventListener('click', () => {
-    window.location.href = '/api/export/vfm?model=' + encodeURIComponent(state.activeModel || 'synth_stacked_v2') + '&rate_type=alloc&format=xlsx';
+    window.location.href = '/api/export/vfm?model=' + encodeURIComponent(state.activeModel || 'synth_stacked_v2') + '&rate_type=alloc&format=csv';
   });
   document.getElementById('hdr-dl-pta').addEventListener('click', () => {
-    window.location.href = '/api/export/pta?source=hybrid_intersection&format=xlsx';
+    window.location.href = '/api/export/pta?source=hybrid_intersection&format=csv';
   });
   document.getElementById('hdr-dl-rep').addEventListener('click', () => {
     window.location.href = '/api/export/report';

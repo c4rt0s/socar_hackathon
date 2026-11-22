@@ -595,19 +595,21 @@ class Workbench:
             with self.lock:
                 df = self.model_daily.get(mname)
         if df is None or df.empty:
-            return pd.DataFrame(columns=["date", "well_name", "oil_rate_stbd", "water_rate_stbd", "gas_rate_mscfd"])
+            return pd.DataFrame(columns=["timestamp", "well_name", "oil_rate_stbd", "water_rate_stbd", "gas_rate_mscfd"])
         ts = pd.to_datetime(df["date"], utc=True).dt.tz_localize(None).dt.strftime("%Y-%m-%d")
         out = pd.DataFrame({
-            "date": ts,
+            "timestamp": ts,
             "well_name": df["well_name"].astype(str),
             "oil_rate_stbd": df[f"oil_rate_{rate_type}_stbd"].astype(float),
             "water_rate_stbd": df[f"water_rate_{rate_type}_stbd"].astype(float),
             "gas_rate_mscfd": df[f"gas_rate_{rate_type}_mscfd"].astype(float),
         })
-        return out.sort_values(["well_name", "date"]).reset_index(drop=True)
+        return out.sort_values(["well_name", "timestamp"]).reset_index(drop=True)
 
     def pta_deliverable_df(self, source: str = "auto") -> pd.DataFrame:
-        """Hackathon Phase 2 PTA deliverable: well_name, t_shut, duration_hr, m_psi_cycle, k_md, skin, dP_skin."""
+        """Hackathon Phase 2 PTA deliverable matching pta_submission_template.csv:
+        well_name, shut_in_time, permeability_md, skin, delta_p_skin_psi, horner_slope."""
+        pta_cols = ["well_name", "shut_in_time", "permeability_md", "skin", "delta_p_skin_psi", "horner_slope"]
         adv_source_map = {
             "stehfest_analytical": "analytical_match",
             "von_schroeter_deconv": "deconvolution",
@@ -634,16 +636,14 @@ class Workbench:
                         t_shut = pd.to_datetime(ev["shut_in_start"], utc=True).tz_localize(None).strftime("%Y-%m-%d %H:%M:%S")
                         rows_a.append({
                             "well_name": w,
-                            "t_shut": t_shut,
-                            "duration_hr": round(float(ev["duration_hr"]), 2),
-                            "m_psi_cycle": round(float(an["m"]), 4),
-                            "k_md": round(float(an["k"]), 4),
+                            "shut_in_time": t_shut,
+                            "permeability_md": round(float(an["k"]), 4),
                             "skin": round(float(an["skin"]), 4),
-                            "dP_skin": round(float(an["dP_skin"]), 4),
+                            "delta_p_skin_psi": round(float(an["dP_skin"]), 4),
+                            "horner_slope": round(float(an["m"]), 4),
                         })
-                cols = ["well_name", "t_shut", "duration_hr", "m_psi_cycle", "k_md", "skin", "dP_skin"]
-                df_a = pd.DataFrame(rows_a, columns=cols)
-                return df_a.sort_values(["well_name", "t_shut"]).reset_index(drop=True) if not df_a.empty else df_a
+                df_a = pd.DataFrame(rows_a, columns=pta_cols)
+                return df_a.sort_values(["well_name", "shut_in_time"]).reset_index(drop=True) if not df_a.empty else df_a
 
             if source.startswith("hybrid_"):
                 hyb = self._load_hybrid_pta_cache()
@@ -664,16 +664,14 @@ class Workbench:
                         t_shut = pd.to_datetime(ev["shut_in_start"], utc=True).tz_localize(None).strftime("%Y-%m-%d %H:%M:%S")
                         rows_h.append({
                             "well_name": w,
-                            "t_shut": t_shut,
-                            "duration_hr": round(float(ev["duration_hr"]), 2),
-                            "m_psi_cycle": round(float(lg["m"]), 4),
-                            "k_md": round(float(lg["k"]), 4),
+                            "shut_in_time": t_shut,
+                            "permeability_md": round(float(lg["k"]), 4),
                             "skin": round(float(lg["skin"]), 4),
-                            "dP_skin": round(float(lg["dP_skin"]), 4),
+                            "delta_p_skin_psi": round(float(lg["dP_skin"]), 4),
+                            "horner_slope": round(float(lg["m"]), 4),
                         })
-                cols = ["well_name", "t_shut", "duration_hr", "m_psi_cycle", "k_md", "skin", "dP_skin"]
-                df_h = pd.DataFrame(rows_h, columns=cols)
-                return df_h.sort_values(["well_name", "t_shut"]).reset_index(drop=True) if not df_h.empty else df_h
+                df_h = pd.DataFrame(rows_h, columns=pta_cols)
+                return df_h.sort_values(["well_name", "shut_in_time"]).reset_index(drop=True) if not df_h.empty else df_h
 
             rows: List[Dict[str, Any]] = []
             for w in sorted(self.events):
@@ -696,16 +694,14 @@ class Workbench:
                     t_shut = pd.to_datetime(ev["shut_in_start"], utc=True).tz_localize(None).strftime("%Y-%m-%d %H:%M:%S")
                     rows.append({
                         "well_name": w,
-                        "t_shut": t_shut,
-                        "duration_hr": round(float(ev["duration_hr"]), 2),
-                        "m_psi_cycle": m_val,
-                        "k_md": k_val,
+                        "shut_in_time": t_shut,
+                        "permeability_md": k_val,
                         "skin": s_val,
-                        "dP_skin": dp_val,
+                        "delta_p_skin_psi": dp_val,
+                        "horner_slope": m_val,
                     })
-            cols = ["well_name", "t_shut", "duration_hr", "m_psi_cycle", "k_md", "skin", "dP_skin"]
-            df = pd.DataFrame(rows, columns=cols)
-            return df.sort_values(["well_name", "t_shut"]).reset_index(drop=True) if not df.empty else df
+            df = pd.DataFrame(rows, columns=pta_cols)
+            return df.sort_values(["well_name", "shut_in_time"]).reset_index(drop=True) if not df.empty else df
 
     @staticmethod
     def export_table_bytes(df: pd.DataFrame, fmt: str = "xlsx", sheet_name: str = "Results") -> Tuple[bytes, str, str]:
@@ -1643,7 +1639,7 @@ class Workbench:
                 fname = str(item.get("name") or f"{mname}_{rtype}.csv")
                 audit_info = {
                     "filename": fname,
-                    "column_map": {"date": "date", "well_name": "well_name", "oil_rate_stbd": "oil_rate_stbd",
+                    "column_map": {"date": "timestamp", "well_name": "well_name", "oil_rate_stbd": "oil_rate_stbd",
                                    "water_rate_stbd": "water_rate_stbd", "gas_rate_mscfd": "gas_rate_mscfd"},
                     "date_column_exact": True,
                     "n_rows": int(len(sub_df)),

@@ -145,16 +145,16 @@ class Handler(BaseHTTPRequestHandler):
             if url.path == "/api/export/vfm":
                 model = q.get("model") or wb.active_model or "physics_wls"
                 rate_type = q.get("rate_type", "alloc")
-                fmt = q.get("format", "xlsx")
+                fmt = q.get("format", "csv")
                 df = wb.vfm_deliverable_df(model, rate_type=rate_type)
                 raw, ctype, ext = wb.export_table_bytes(df, fmt=fmt, sheet_name="VFM")
-                return self._send(200, body=raw, content_type=ctype, filename=f"vfm_{model}_{rate_type}.{ext}")
+                return self._send(200, body=raw, content_type=ctype, filename=f"vfm_submission_{model}.{ext}")
             if url.path == "/api/export/pta":
-                source = q.get("source", "auto")
-                fmt = q.get("format", "xlsx")
+                source = q.get("source", "hybrid_intersection")
+                fmt = q.get("format", "csv")
                 df = wb.pta_deliverable_df(source=source)
                 raw, ctype, ext = wb.export_table_bytes(df, fmt=fmt, sheet_name="PTA")
-                return self._send(200, body=raw, content_type=ctype, filename=f"pta_{wb.pta_rate_basis}_{source}.{ext}")
+                return self._send(200, body=raw, content_type=ctype, filename=f"pta_submission_{source}.{ext}")
             if url.path == "/api/export/report":
                 raw = wb.engineering_report_html_bytes()
                 return self._send(200, body=raw, content_type="text/html; charset=utf-8",
